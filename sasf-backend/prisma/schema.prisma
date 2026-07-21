@@ -1,0 +1,458 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────
+
+enum TipoPerfil {
+  PACIENTE
+  PROFISSIONAL
+  ADMIN
+}
+
+enum StatusConta {
+  ATIVO
+  PENDENTE
+  BLOQUEADO
+}
+
+enum StatusValidacao {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum StatusCondicao {
+  ATIVA
+  CONTROLADA
+  RESOLVIDA
+}
+
+enum GravidadeAlergia {
+  LEVE
+  MODERADA
+  GRAVE
+}
+
+enum TipoMedicao {
+  PRESSAO
+  GLICEMIA
+  PESO
+  TEMPERATURA
+  FC
+  SPO2
+}
+
+enum StatusToken {
+  ATIVO
+  EXPIRADO
+  REVOGADO
+}
+
+enum CategoriaDado {
+  PERFIL
+  MEMBROS
+  CONDICOES
+  ALERGIAS
+  MEDICAMENTOS
+  CONTATOS
+  VITAIS
+  SINTOMAS
+}
+
+// ─── Tabelas ─────────────────────────────────────────────
+
+model Usuario {
+  id             String      @id @default(uuid()) @db.Uuid
+  nome           String      @db.VarChar(255)
+  email          String      @unique @db.VarChar(255)
+  senhaHash      String      @map("senha_hash")
+  telefone       String?     @db.VarChar(20)
+  fotoUrl        String?     @map("foto_url")
+  dataNascimento DateTime?   @map("data_nascimento") @db.Date
+  sexo           String?     @db.VarChar(20)
+  endereco       String?     @db.VarChar(255)
+  cidade         String?     @db.VarChar(100)
+  estado         String?     @db.Char(2)
+  tipoPerfil     TipoPerfil  @map("tipo_perfil")
+  statusConta    StatusConta @default(ATIVO) @map("status_conta")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  profissionalDetalhe ProfissionalDetalhe?
+  membrosFamilia      MembroFamilia[]
+  sinaisVitais        SinalVital[]          @relation("RegistradoPor")
+  sintomas            RegistroSintoma[]     @relation("SintomaRegistradoPor")
+  tokensRecebidos     TokenAcesso[]         @relation("ProfissionalToken")
+  tokensConcedidos    TokenAcesso[]         @relation("ConcessorToken")
+  avaliacoes          ProfissionalDetalhe[] @relation("AvaliadoPor")
+  refreshTokens       RefreshToken[]
+
+  @@map("usuarios")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  token     String   @unique
+  usuarioId String   @map("usuario_id") @db.Uuid
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model ProfissionalDetalhe {
+  id                    String          @id @default(uuid()) @db.Uuid
+  usuarioId             String          @unique @map("usuario_id") @db.Uuid
+  registroProfissional  String          @map("registro_profissional") @db.VarChar(50)
+  categoriaConselho     String          @map("categoria_conselho") @db.VarChar(20)
+  ufConselho            String          @map("uf_conselho") @db.Char(2)
+  especialidade         String?         @db.VarChar(100)
+  statusValidacao       StatusValidacao @default(PENDING) @map("status_validacao")
+  avaliadoPorId         String?         @map("avaliado_por") @db.Uuid
+  avaliadoEm            DateTime?       @map("avaliado_em")
+  motivoRejeicao        String?         @map("motivo_rejeicao")
+  createdAt             DateTime        @default(now()) @map("created_at")
+
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  avaliadoPor Usuario? @relation("AvaliadoPor", fields: [avaliadoPorId], references: [id])
+
+  @@map("profissionais_detalhes")
+}
+
+model MembroFamilia {
+  id                    String   @id @default(uuid()) @db.Uuid
+  usuarioResponsavelId  String   @map("usuario_responsavel_id") @db.Uuid
+  nome                  String   @db.VarChar(255)
+  dataNascimento        DateTime @map("data_nascimento") @db.Date
+  sexo                  String   @db.VarChar(20)
+  parentesco            String   @db.VarChar(50)
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  responsavel          Usuario              @relation(fields: [usuarioResponsavelId], references: [id], onDelete: Cascade)
+  condicoesSaude       CondicaoSaude[]
+  alergias             Alergia[]
+  medicamentosUso      MedicamentoUso[]
+  contatosEmergencia   ContatoEmergencia[]
+  sinaisVitais         SinalVital[]
+  sintomas             RegistroSintoma[]
+  tokensAcesso         TokenAcesso[]
+  perfilNutricional    PerfilNutricional?
+  registrosPeso        RegistroPeso[]
+  registrosAgua        RegistroAgua[]
+  refeicoes            RegistroRefeicao[]
+  planosAlimentares    PlanoAlimentar[]
+  exercicios           RegistroExercicio[]
+  registrosPsicologicos RegistroPsicologico[]
+
+  @@map("membros_familia")
+}
+
+model CondicaoSaude {
+  id              String         @id @default(uuid()) @db.Uuid
+  membroId        String         @map("membro_id") @db.Uuid
+  nomeCondicao    String         @map("nome_condicao") @db.VarChar(255)
+  dataDiagnostico DateTime?      @map("data_diagnostico") @db.Date
+  status          StatusCondicao @default(ATIVA)
+  observacoes     String?
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  membro MembroFamilia @relation(fields: [membroId], references: [id], onDelete: Cascade)
+
+  @@map("condicoes_saude")
+}
+
+model Alergia {
+  id          String            @id @default(uuid()) @db.Uuid
+  membroId    String            @map("membro_id") @db.Uuid
+  substancia  String            @db.VarChar(255)
+  gravidade   GravidadeAlergia  @default(LEVE)
+  reacao      String?
+  createdAt   DateTime          @default(now()) @map("created_at")
+
+  membro MembroFamilia @relation(fields: [membroId], references: [id], onDelete: Cascade)
+
+  @@map("alergias")
+}
+
+model MedicamentoUso {
+  id               String    @id @default(uuid()) @db.Uuid
+  membroId         String    @map("membro_id") @db.Uuid
+  nomeMedicamento  String    @map("nome_medicamento") @db.VarChar(255)
+  dosagem          String?   @db.VarChar(100)
+  frequencia       String?   @db.VarChar(100)
+  dataInicio       DateTime? @map("data_inicio") @db.Date
+  dataFim          DateTime? @map("data_fim") @db.Date
+  usoContinuo      Boolean   @default(false) @map("uso_continuo")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  membro MembroFamilia @relation(fields: [membroId], references: [id], onDelete: Cascade)
+
+  @@map("medicamentos_uso")
+}
+
+model ContatoEmergencia {
+  id          String   @id @default(uuid()) @db.Uuid
+  membroId    String   @map("membro_id") @db.Uuid
+  nome        String   @db.VarChar(255)
+  parentesco  String   @db.VarChar(50)
+  telefone    String   @db.VarChar(20)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  membro MembroFamilia @relation(fields: [membroId], references: [id], onDelete: Cascade)
+
+  @@map("contatos_emergencia")
+}
+
+model SinalVital {
+  id                      String      @id @default(uuid()) @db.Uuid
+  membroId                String      @map("membro_id") @db.Uuid
+  registradoPorUsuarioId  String      @map("registrado_por_usuario_id") @db.Uuid
+  tipoMedicao             TipoMedicao @map("tipo_medicao")
+  valorPrimario           Decimal     @map("valor_primario") @db.Decimal(10, 2)
+  valorSecundario         Decimal?    @map("valor_secundario") @db.Decimal(10, 2)
+  unidade                 String      @db.VarChar(20)
+  dataHoraMedicao         DateTime    @map("data_hora_medicao")
+  observacoes             String?
+  createdAt               DateTime    @default(now()) @map("created_at")
+
+  membro        MembroFamilia @relation(fields: [membroId], references: [id], onDelete: Cascade)
+  registradoPor Usuario       @relation("RegistradoPor", fields: [registradoPorUsuarioId], references: [id])
+
+  @@map("sinais_vitais")
+}
+
+model RegistroSintoma {
+  id                      String   @id @default(uuid()) @db.Uuid
+  membroId                String   @map("membro_id") @db.Uuid
+  registradoPorUsuarioId  String   @map("registrado_por_usuario_id") @db.Uuid
+  descricao               String
+  intensidade             Int      @db.SmallInt
+  dataHoraOcorrencia      DateTime @map("data_hora_ocorrencia")
+  observacoes             String?
+  createdAt               DateTime @default(now()) @map("created_at")
+
+  membro        MembroFamilia @relation(fields: [membroId], references: [id], onDelete: Cascade)
+  registradoPor Usuario       @relation("SintomaRegistradoPor", fields: [registradoPorUsuarioId], references: [id])
+
+  @@map("registros_sintomas")
+}
+
+model TokenAcesso {
+  id                      String      @id @default(uuid()) @db.Uuid
+  membroId                String      @map("membro_id") @db.Uuid
+  profissionalId          String      @map("profissional_id") @db.Uuid
+  concedidoPorUsuarioId   String      @map("concedido_por_usuario_id") @db.Uuid
+  codigoToken             String      @unique @map("codigo_token")
+  dataCriacao             DateTime    @default(now()) @map("data_criacao")
+  dataExpiracao           DateTime    @map("data_expiracao")
+  dataRevogacao           DateTime?   @map("data_revogacao")
+  status                  StatusToken @default(ATIVO)
+  observacoes             String?
+
+  membro       MembroFamilia    @relation(fields: [membroId], references: [id], onDelete: Cascade)
+  profissional Usuario          @relation("ProfissionalToken", fields: [profissionalId], references: [id])
+  concedidoPor Usuario          @relation("ConcessorToken", fields: [concedidoPorUsuarioId], references: [id])
+  escopos      EscopoToken[]
+  logsAcesso   LogAcessoDados[]
+
+  @@map("tokens_acesso")
+}
+
+model EscopoToken {
+  id             String        @id @default(uuid()) @db.Uuid
+  tokenId        String        @map("token_id") @db.Uuid
+  categoriaDado  CategoriaDado @map("categoria_dado")
+
+  token TokenAcesso @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+
+  @@unique([tokenId, categoriaDado])
+  @@map("escopo_token")
+}
+
+model LogAcessoDados {
+  id                String   @id @default(uuid()) @db.Uuid
+  tokenId           String   @map("token_id") @db.Uuid
+  profissionalId    String   @map("profissional_id") @db.Uuid
+  recursoAcessado   String   @map("recurso_acessado")
+  dataHoraAcesso    DateTime @default(now()) @map("data_hora_acesso")
+  ipOrigem          String?  @map("ip_origem") @db.VarChar(45)
+
+  token TokenAcesso @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+
+  @@map("logs_acesso_dados")
+}
+
+// ─── Nutrição ────────────────────────────────────────────
+
+model PerfilNutricional {
+  id                      String    @id @default(uuid()) @db.Uuid
+  membroId                String    @unique @map("membro_id") @db.Uuid
+  alturaAtualCm           Decimal?  @map("altura_atual_cm") @db.Decimal(5, 1)
+  pesoAtualKg             Decimal?  @map("peso_atual_kg") @db.Decimal(5, 2)
+  metaPesoKg              Decimal?  @map("meta_peso_kg") @db.Decimal(5, 2)
+  percentualGordura       Decimal?  @map("percentual_gordura") @db.Decimal(4, 1)
+  circunferenciaAbdominal Decimal?  @map("circunferencia_abdominal") @db.Decimal(5, 1)
+  metaAguaMl              Int?      @map("meta_agua_ml")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+  createdAt               DateTime  @default(now()) @map("created_at")
+
+  membro MembroFamilia @relation(fields: [membroId], references: [id], onDelete: Cascade)
+
+  @@map("perfis_nutricionais")
+}
+
+model RegistroPeso {
+  id        String   @id @default(uuid()) @db.Uuid
+  membroId  String   @map("membro_id") @db.Uuid
+  pesoKg    Decimal  @map("peso_kg") @db.Decimal(5, 2)
+  imc       Decimal? @db.Decimal(4, 1)
+  dataHora  DateTime @map("data_hora")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  membro MembroFamilia @relation(fields: [membroId], references: [id], onDelete: Cascade)
+
+  @@map("registros_peso")
+}
+
+model RegistroAgua {
+  id        String   @id @default(uuid()) @db.Uuid
+  membroId  String   @map("membro_id") @db.Uuid
+  quantidadeMl Int   @map("quantidade_ml")
+  dataHora  DateTime @map("data_hora")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  membro MembroFamilia @relation(fields: [membroId], references: [id], onDelete: Cascade)
+
+  @@map("registros_agua")
+}
+
+enum TipoRefeicao {
+  CAFE_DA_MANHA
+  LANCHE_MANHA
+  ALMOCO
+  LANCHE_TARDE
+  JANTAR
+  CEIA
+  OUTRO
+}
+
+model RegistroRefeicao {
+  id          String       @id @default(uuid()) @db.Uuid
+  membroId    String       @map("membro_id") @db.Uuid
+  tipo        TipoRefeicao
+  descricao   String
+  calorias    Int?
+  dataHora    DateTime     @map("data_hora")
+  observacoes String?
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  membro MembroFamilia @relation(fields: [membroId], references: [id], onDelete: Cascade)
+
+  @@map("registros_refeicao")
+}
+
+model PlanoAlimentar {
+  id               String   @id @default(uuid()) @db.Uuid
+  membroId         String   @map("membro_id") @db.Uuid
+  profissionalId   String   @map("profissional_id") @db.Uuid
+  titulo           String   @db.VarChar(255)
+  descricao        String?
+  metaCaloricaDia  Int?     @map("meta_calorica_dia")
+  ativo            Boolean  @default(true)
+  dataInicio       DateTime @map("data_inicio") @db.Date
+  dataFim          DateTime? @map("data_fim") @db.Date
+  observacoes      String?
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  membro       MembroFamilia @relation(fields: [membroId], references: [id], onDelete: Cascade)
+
+  @@map("planos_alimentares")
+}
+
+// ─── Exercícios ──────────────────────────────────────────
+
+enum TipoExercicio {
+  CAMINHADA
+  CORRIDA
+  ACADEMIA
+  CICLISMO
+  NATACAO
+  FUTEBOL
+  OUTRO
+}
+
+enum IntensidadeExercicio {
+  LEVE
+  MODERADA
+  INTENSA
+}
+
+model RegistroExercicio {
+  id            String               @id @default(uuid()) @db.Uuid
+  membroId      String               @map("membro_id") @db.Uuid
+  tipo          TipoExercicio
+  duracaoMin    Int                  @map("duracao_min")
+  distanciaKm   Decimal?             @map("distancia_km") @db.Decimal(6, 2)
+  caloriasEst   Int?                 @map("calorias_est")
+  intensidade   IntensidadeExercicio
+  observacoes   String?
+  dataHora      DateTime             @map("data_hora")
+  createdAt     DateTime             @default(now()) @map("created_at")
+
+  membro MembroFamilia @relation(fields: [membroId], references: [id], onDelete: Cascade)
+
+  @@map("registros_exercicio")
+}
+
+// ─── Psicologia ──────────────────────────────────────────
+
+model RegistroPsicologico {
+  id              String   @id @default(uuid()) @db.Uuid
+  membroId        String   @map("membro_id") @db.Uuid
+  humor           Int      @db.SmallInt
+  ansiedade       Int      @db.SmallInt
+  estresse        Int      @db.SmallInt
+  qualidadeSono   Int      @map("qualidade_sono") @db.SmallInt
+  energia         Int      @db.SmallInt
+  observacoes     String?
+  dataHora        DateTime @map("data_hora")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  membro MembroFamilia @relation(fields: [membroId], references: [id], onDelete: Cascade)
+
+  @@map("registros_psicologicos")
+}
+
+// ─── Dispositivos ────────────────────────────────────────
+
+model DispositivoConectado {
+  id          String   @id @default(uuid()) @db.Uuid
+  usuarioId   String   @map("usuario_id") @db.Uuid
+  provedor    String   @db.VarChar(50)
+  nome        String   @db.VarChar(100)
+  ativo       Boolean  @default(true)
+  ultimaSync  DateTime? @map("ultima_sync")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("dispositivos_conectados")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  acao      String   @db.VarChar(50)
+  recurso   String   @db.VarChar(100)
+  dataHora  DateTime @default(now()) @map("data_hora")
+  ip        String?  @db.VarChar(45)
+  detalhes  String?
+
+  @@map("audit_logs")
+}

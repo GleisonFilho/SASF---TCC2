@@ -1,0 +1,32 @@
+# Identidade Visual - SASF
+
+## Conceito
+Aplicação moderna de saúde digital focada em segurança, organização familiar e LGPD.
+
+## Paleta
+
+Primária:
+#7B2CBF
+
+Secundária:
+#5A189A
+
+Azul:
+#4CC9F0
+
+Fundo:
+#F8F9FA
+
+Sucesso:
+#2DC653
+
+## Fonte
+Poppins
+
+## Estilo
+- Minimalista
+- Clean
+- Profissional
+- Healthtech
+- Cards arredondados
+- Gradientes suaves

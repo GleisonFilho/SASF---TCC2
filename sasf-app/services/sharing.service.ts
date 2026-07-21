@@ -1,0 +1,29 @@
+import { api } from './api';
+import type { Compartilhamento, EscopoCompartilhamento, LogAcesso } from '../types';
+
+export const sharingService = {
+  async list(): Promise<Compartilhamento[]> {
+    const { data } = await api.get('/sharing');
+    return data;
+  },
+
+  async getById(id: string): Promise<Compartilhamento & { logsAcesso: LogAcesso[] }> {
+    const { data } = await api.get(`/sharing/${id}`);
+    return data;
+  },
+
+  async create(body: {
+    membroId: string;
+    profissionalEmail: string;
+    dataExpiracao: string;
+    observacoes?: string;
+    escopos: EscopoCompartilhamento[];
+  }): Promise<Compartilhamento> {
+    const { data } = await api.post('/sharing', body);
+    return data;
+  },
+
+  async revoke(id: string): Promise<void> {
+    await api.patch(`/sharing/${id}/revoke`);
+  },
+};
