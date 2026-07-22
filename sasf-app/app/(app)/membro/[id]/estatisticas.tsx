@@ -26,6 +26,50 @@ function ChartCard({ icon, title, children }: { icon: IoniconsName; title: strin
   );
 }
 
+const WEEKDAY_LABELS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+const BAR_AREA_HEIGHT = 100;
+const WEEKLY_GOAL_MIN = 150;
+
+function ExerciseWeekBars({ exercises }: { exercises: { dataHora: string; duracaoMin: number }[] }) {
+  const dailyGoal = WEEKLY_GOAL_MIN / 7;
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const day = new Date(); day.setHours(0, 0, 0, 0); day.setDate(day.getDate() - (6 - i));
+    const dayEnd = new Date(day); dayEnd.setHours(23, 59, 59, 999);
+    const minutos = exercises
+      .filter((e) => { const d = new Date(e.dataHora); return d >= day && d <= dayEnd; })
+      .reduce((s, e) => s + e.duracaoMin, 0);
+    return { label: WEEKDAY_LABELS[day.getDay()], minutos };
+  });
+  const maxMinutos = Math.max(...days.map((d) => d.minutos), 1);
+  const totalSemana = days.reduce((s, d) => s + d.minutos, 0);
+
+  return (
+    <View className="bg-surface rounded-3xl p-4 mb-4 border border-gray-100 shadow-sm shadow-gray-900/5">
+      <View className="flex-row items-center mb-1">
+        <Icon name="fitness-outline" size={16} color="#0F172A" />
+        <Text className="text-sm font-bold text-gray-900 ml-2">Minutos de Exercício</Text>
+      </View>
+      <Text className="text-xs text-gray-400 mb-4">Esta semana · meta {WEEKLY_GOAL_MIN} min ({totalSemana} min registrados)</Text>
+      <View style={{ height: BAR_AREA_HEIGHT }} className="flex-row items-end justify-between gap-2">
+        {days.map((d, i) => (
+          <View key={i} className="flex-1 items-center justify-end" style={{ height: BAR_AREA_HEIGHT }}>
+            <View
+              style={{
+                width: '100%',
+                maxWidth: 26,
+                height: Math.max((d.minutos / maxMinutos) * (BAR_AREA_HEIGHT - 18), 4),
+                backgroundColor: d.minutos >= dailyGoal ? '#16A34A' : '#E2E8F0',
+                borderRadius: 6,
+              }}
+            />
+            <Text className="text-[10.5px] text-gray-400 font-semibold mt-1.5">{d.label}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 export default function EstatisticasScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const membroId = id || '';
@@ -39,7 +83,7 @@ export default function EstatisticasScreen() {
   const isLoading = vitalSigns.isLoading || weight.isLoading || water.isLoading || exercises.isLoading || psych.isLoading;
   if (isLoading) return <LoadingScreen />;
 
-  const hasAnyData = (weight.data?.length || 0) > 0 || (psych.data?.length || 0) > 0 || (exercises.data?.length || 0) > 0 || (vitalSigns.data?.length || 0) > 0;
+  const hasAnyData = (weight.data?.length || 0) > 0 || (psych.data?.length || 0) > 0 || (exercises.data?.length || 0) > 0 || (vitalSigns.data?.length || 0) > 0 || (water.data?.length || 0) > 0;
   if (!hasAnyData) {
     return (
       <ScreenContainer>
@@ -56,15 +100,6 @@ export default function EstatisticasScreen() {
   const pressaoData = pressaoRecords.map((v) => ({ label: shortDate(v.dataHoraMedicao), value: parseFloat(v.valorPrimario) }));
 
   const glicemiaData = (vitalSigns.data || []).filter((v) => v.tipoMedicao === 'GLICEMIA').reverse().slice(-10).map((v) => ({ label: shortDate(v.dataHoraMedicao), value: parseFloat(v.valorPrimario) }));
-
-  const exerciseByWeek = (() => {
-    const buckets: Record<string, number> = {};
-    for (const e of exercises.data || []) {
-      const dayKey = shortDate(e.dataHora);
-      buckets[dayKey] = (buckets[dayKey] || 0) + e.duracaoMin;
-    }
-    return Object.entries(buckets).slice(-10).map(([label, value]) => ({ label, value }));
-  })();
 
   const waterByDay = (() => {
     const buckets: Record<string, number> = {};
@@ -89,11 +124,7 @@ export default function EstatisticasScreen() {
         </ChartCard>
       )}
 
-      {exerciseByWeek.length >= 2 && (
-        <ChartCard icon="fitness-outline" title="Exercícios">
-          <LineChart data={exerciseByWeek} color="#16A34A" unit="min" />
-        </ChartCard>
-      )}
+      {(exercises.data?.length || 0) > 0 && <ExerciseWeekBars exercises={exercises.data || []} />}
 
       {moodData.length >= 2 && (
         <ChartCard icon="happy-outline" title="Humor">

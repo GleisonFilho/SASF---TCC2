@@ -19,11 +19,13 @@ export default function DispositivosScreen() {
 
   return (
     <ScreenContainer>
-      <View className="bg-accent-light rounded-2xl p-4 mb-6 border border-accent/20 flex-row">
-        <Icon name="flash-outline" size={18} color="#0E7490" />
-        <Text className="text-sm text-accent-dark leading-5 flex-1 ml-2.5">
-          Em breve você poderá sincronizar automaticamente passos, frequência cardíaca e sono
-          direto do seu smartwatch ou pulseira fitness.
+      <View className="items-center mb-6 mt-2 px-4">
+        <View className="w-16 h-16 rounded-2xl bg-accent-light items-center justify-center mb-3">
+          <Icon name="watch-outline" size={32} color="#0E7490" />
+        </View>
+        <Text className="text-base font-extrabold text-gray-900">Conecte seus dispositivos</Text>
+        <Text className="text-sm text-gray-400 mt-1.5 text-center leading-5">
+          Sincronize passos, sono, frequência cardíaca e mais para enriquecer o Health Score.
         </Text>
       </View>
 

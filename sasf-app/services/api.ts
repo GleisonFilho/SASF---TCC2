@@ -118,6 +118,16 @@ api.interceptors.request.use(async (config: RetryableConfig) => {
   return config;
 });
 
+function logRequestFailure(error: AxiosError, originalRequest?: RetryableConfig) {
+  console.error('[API] ❌ Requisição falhou');
+  console.error('  URL completa:', `${originalRequest?.baseURL ?? ''}${originalRequest?.url ?? ''}`);
+  console.error('  Método:', originalRequest?.method);
+  console.error('  Status HTTP:', error.response?.status ?? '(sem resposta do servidor)');
+  console.error('  Corpo da resposta:', error.response?.data ?? '(nenhum)');
+  console.error('  Código Axios:', error.code);
+  console.error('  Mensagem:', error.message);
+}
+
 api.interceptors.response.use(
   (response) => {
     console.log(`[API] ← ${response.status} ${response.config.url}`, response.data);
@@ -126,17 +136,12 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as RetryableConfig | undefined;
 
-    console.error('[API] ❌ Requisição falhou');
-    console.error('  URL completa:', `${originalRequest?.baseURL ?? ''}${originalRequest?.url ?? ''}`);
-    console.error('  Método:', originalRequest?.method);
-    console.error('  Status HTTP:', error.response?.status ?? '(sem resposta do servidor)');
-    console.error('  Corpo da resposta:', error.response?.data ?? '(nenhum)');
-    console.error('  Código Axios:', error.code);
-    console.error('  Mensagem:', error.message);
-
-    // 401 -> tenta renovar o access token uma vez
+    // 401 -> access token expirado é esperado (expira em 15min); tenta renovar
+    // uma vez em silêncio antes de tratar como falha de verdade. Só loga como
+    // erro se a renovação também falhar.
     if (error.response?.status === 401 && originalRequest && !originalRequest._authRetry) {
       originalRequest._authRetry = true;
+      console.log('[API] Access token expirado, renovando sessão...');
 
       try {
         const refreshToken = await SecureStore.getItemAsync('refreshToken');
@@ -150,6 +155,7 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
         return api(originalRequest);
       } catch {
+        console.error('[API] ❌ Falha ao renovar sessão — sessão expirada, redirecionando para login.');
         await SecureStore.deleteItemAsync('accessToken');
         await SecureStore.deleteItemAsync('refreshToken');
         useAuthStore.getState().logout();
@@ -167,6 +173,7 @@ api.interceptors.response.use(
       return api(originalRequest);
     }
 
+    logRequestFailure(error, originalRequest);
     return Promise.reject(error);
   },
 );

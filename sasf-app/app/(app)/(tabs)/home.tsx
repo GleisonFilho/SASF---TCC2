@@ -1,18 +1,22 @@
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { StatCard } from '../../../components/ui/StatCard';
 import { HealthScore } from '../../../components/ui/HealthScore';
 import { AchievementBadge } from '../../../components/ui/AchievementBadge';
+import { MemberScoreRing } from '../../../components/ui/MemberScoreRing';
 import { CardSkeleton } from '../../../components/ui/Skeleton';
 import { Icon, type IoniconsName } from '../../../components/ui/Icon';
 import { ErrorMessage } from '../../../components/ui/ErrorMessage';
+import { primaryShadow, accentShadow } from '../../../constants/shadows';
 import { useAuthStore } from '../../../store/authStore';
 import { useFamilyMembers } from '../../../hooks/useFamilyMembers';
 import { useSharings } from '../../../hooks/useSharing';
 import { useConditions, useMedications } from '../../../hooks/useHealthRecords';
 import { useWaterRecords, useWeightRecords, useExerciseWeeklyStats, usePsychologyRecords, useHealthScore } from '../../../hooks/useWellness';
 import { computeAchievements, calculateStreak } from '../../../utils/achievements';
+import { formatFullDatePt } from '../../../utils/date';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -22,8 +26,7 @@ function getGreeting(): string {
 }
 
 function todayLabel(): string {
-  const label = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
-  return label.charAt(0).toUpperCase() + label.slice(1);
+  return formatFullDatePt(new Date(), { weekday: true });
 }
 
 function NumberChip({ icon, color, value, label }: { icon: IoniconsName; color: string; value: string | number; label: string }) {
@@ -102,13 +105,30 @@ export default function HomeScreen() {
           <Text className="text-2xl font-bold text-gray-900 tracking-tight">{firstName}</Text>
           <Text className="text-xs text-gray-400 mt-0.5">{todayLabel()}</Text>
         </View>
-        <TouchableOpacity
-          className="bg-primary w-12 h-12 rounded-full items-center justify-center border-[2.5px] border-primary-50"
-          onPress={() => router.push('/(app)/(tabs)/perfil')}
-          activeOpacity={0.8}
-        >
-          <Text className="text-white font-bold text-lg">{user?.nome?.[0] || '?'}</Text>
-        </TouchableOpacity>
+        <View className="flex-row items-center gap-2.5">
+          <TouchableOpacity
+            className="w-11 h-11 rounded-2xl bg-surface border border-gray-100 items-center justify-center"
+            style={{ shadowColor: '#0F172A', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 }}
+            onPress={() => router.push('/(app)/perfil/configuracoes')}
+            activeOpacity={0.7}
+          >
+            <Icon name="notifications-outline" size={21} color="#475569" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/(app)/(tabs)/perfil')} activeOpacity={0.8}>
+            {user?.fotoUrl ? (
+              <Image source={{ uri: user.fotoUrl }} style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 2.5, borderColor: '#EFF6FF' }} />
+            ) : (
+              <LinearGradient
+                colors={['#2563EB', '#1D4ED8']}
+                start={{ x: 0.15, y: 0 }}
+                end={{ x: 0.85, y: 1 }}
+                style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 2.5, borderColor: '#EFF6FF' }}
+              >
+                <Text className="text-white font-extrabold text-lg">{user?.nome?.[0] || '?'}</Text>
+              </LinearGradient>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Admin banner */}
@@ -131,6 +151,7 @@ export default function HomeScreen() {
           score={healthScore.data.score}
           classificacao={healthScore.data.classificacao}
           breakdown={healthScore.data.breakdown}
+          trend={healthScore.data.trend}
           explicacao={healthScore.data.explicacao}
           streak={streak}
         />
@@ -177,13 +198,17 @@ export default function HomeScreen() {
       {/* Atalhos rápidos */}
       <Text className="text-base font-bold text-gray-900 mb-3">Atalhos Rápidos</Text>
       <View className="flex-row gap-3 mb-6">
-        <TouchableOpacity className="flex-1 bg-primary rounded-2xl p-4 items-center shadow-sm shadow-primary/25" onPress={() => router.push('/(app)/membro/novo')} activeOpacity={0.8}>
-          <Icon name="person-add-outline" size={22} color="#fff" />
-          <Text className="text-white text-xs font-semibold mt-2">Novo Membro</Text>
+        <TouchableOpacity className="flex-1" onPress={() => router.push('/(app)/membro/novo')} activeOpacity={0.8} style={primaryShadow}>
+          <LinearGradient colors={['#2563EB', '#1D4ED8']} start={{ x: 0.15, y: 0 }} end={{ x: 0.85, y: 1 }} style={{ borderRadius: 18, padding: 16, alignItems: 'center' }}>
+            <Icon name="person-add-outline" size={22} color="#fff" />
+            <Text className="text-white text-xs font-semibold mt-2">Novo Membro</Text>
+          </LinearGradient>
         </TouchableOpacity>
-        <TouchableOpacity className="flex-1 bg-accent rounded-2xl p-4 items-center shadow-sm shadow-accent/25" onPress={() => router.push('/(app)/compartilhamento/novo')} activeOpacity={0.8}>
-          <Icon name="share-outline" size={22} color="#fff" />
-          <Text className="text-white text-xs font-semibold mt-2">Compartilhar</Text>
+        <TouchableOpacity className="flex-1" onPress={() => router.push('/(app)/compartilhamento/novo')} activeOpacity={0.8} style={accentShadow}>
+          <LinearGradient colors={['#06B6D4', '#0E7490']} start={{ x: 0.15, y: 0 }} end={{ x: 0.85, y: 1 }} style={{ borderRadius: 18, padding: 16, alignItems: 'center' }}>
+            <Icon name="share-outline" size={22} color="#fff" />
+            <Text className="text-white text-xs font-semibold mt-2">Compartilhar</Text>
+          </LinearGradient>
         </TouchableOpacity>
       </View>
 
@@ -204,11 +229,9 @@ export default function HomeScreen() {
         </View>
       ) : (
         members.slice(0, 3).map((m) => (
-          <TouchableOpacity key={m.id} className="bg-surface rounded-2xl p-3.5 mb-2.5 border border-gray-100 shadow-sm shadow-gray-900/5 flex-row items-center" onPress={() => router.push(`/(app)/membro/${m.id}`)} activeOpacity={0.7}>
-            <View className="bg-primary-50 w-10 h-10 rounded-full items-center justify-center mr-3">
-              <Text className="text-primary font-bold">{m.nome[0]}</Text>
-            </View>
-            <View className="flex-1">
+          <TouchableOpacity key={m.id} className="bg-surface rounded-2xl p-3 mb-2.5 border border-gray-100 shadow-sm shadow-gray-900/5 flex-row items-center" onPress={() => router.push(`/(app)/membro/${m.id}`)} activeOpacity={0.7}>
+            <MemberScoreRing membroId={m.id} nome={m.nome} size={44} />
+            <View className="flex-1 ml-3">
               <Text className="font-semibold text-gray-900">{m.nome}</Text>
               <Text className="text-xs text-gray-400">{m.parentesco}</Text>
             </View>

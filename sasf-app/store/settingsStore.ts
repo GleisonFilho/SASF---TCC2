@@ -5,28 +5,40 @@ export type ThemePreference = 'light' | 'dark' | 'auto';
 
 interface SettingsState {
   theme: ThemePreference;
-  notificationsEnabled: boolean;
+  lembretesMedicamentos: boolean;
+  resumoSemanal: boolean;
   isLoaded: boolean;
   setTheme: (theme: ThemePreference) => void;
-  setNotificationsEnabled: (enabled: boolean) => void;
+  setLembretesMedicamentos: (enabled: boolean) => void;
+  setResumoSemanal: (enabled: boolean) => void;
   load: () => Promise<void>;
 }
 
 const STORAGE_KEY = 'sasf_settings';
 
+function persist(state: Pick<SettingsState, 'theme' | 'lembretesMedicamentos' | 'resumoSemanal'>) {
+  SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify(state));
+}
+
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   theme: 'auto',
-  notificationsEnabled: true,
+  lembretesMedicamentos: false,
+  resumoSemanal: false,
   isLoaded: false,
 
   setTheme: (theme) => {
     set({ theme });
-    SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify({ theme, notificationsEnabled: get().notificationsEnabled }));
+    persist({ theme, lembretesMedicamentos: get().lembretesMedicamentos, resumoSemanal: get().resumoSemanal });
   },
 
-  setNotificationsEnabled: (notificationsEnabled) => {
-    set({ notificationsEnabled });
-    SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify({ theme: get().theme, notificationsEnabled }));
+  setLembretesMedicamentos: (lembretesMedicamentos) => {
+    set({ lembretesMedicamentos });
+    persist({ theme: get().theme, lembretesMedicamentos, resumoSemanal: get().resumoSemanal });
+  },
+
+  setResumoSemanal: (resumoSemanal) => {
+    set({ resumoSemanal });
+    persist({ theme: get().theme, lembretesMedicamentos: get().lembretesMedicamentos, resumoSemanal });
   },
 
   load: async () => {
@@ -34,7 +46,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const raw = await SecureStore.getItemAsync(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        set({ theme: parsed.theme ?? 'auto', notificationsEnabled: parsed.notificationsEnabled ?? true, isLoaded: true });
+        // Migração do formato antigo (notificationsEnabled único) para os dois toggles novos.
+        const legacyEnabled = parsed.notificationsEnabled ?? false;
+        set({
+          theme: parsed.theme ?? 'auto',
+          lembretesMedicamentos: parsed.lembretesMedicamentos ?? legacyEnabled,
+          resumoSemanal: parsed.resumoSemanal ?? legacyEnabled,
+          isLoaded: true,
+        });
       } else {
         set({ isLoaded: true });
       }

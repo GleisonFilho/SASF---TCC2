@@ -35,7 +35,27 @@
             "usesCleartextTraffic": true
           }
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#2563EB"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O SASF usa acesso às suas fotos para definir a foto do seu perfil."
+        }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5bd4f5dc-b4d6-4461-8341-3deb5e05bb44"
+      }
+    },
+    "owner": "gleisonfilho"
   }
 }

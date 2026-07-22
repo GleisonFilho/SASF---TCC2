@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, Text, View } from 'react-native';
 import { create } from 'zustand';
 import { Icon, type IoniconsName } from './Icon';
@@ -22,10 +22,10 @@ export const useToast = create<ToastState>((set) => ({
   hide: () => set({ visible: false }),
 }));
 
-const bgColors = {
-  success: 'bg-success',
-  error: 'bg-danger',
-  info: 'bg-primary',
+const iconColors: Record<'success' | 'error' | 'info', string> = {
+  success: '#4ADE80',
+  error: '#F87171',
+  info: '#38BDF8',
 };
 
 const icons: Record<'success' | 'error' | 'info', IoniconsName> = {
@@ -36,7 +36,7 @@ const icons: Record<'success' | 'error' | 'info', IoniconsName> = {
 
 export function ToastProvider() {
   const { message, type, visible } = useToast();
-  const translateY = useRef(new Animated.Value(-100)).current;
+  const [translateY] = useState(() => new Animated.Value(-100));
 
   useEffect(() => {
     Animated.spring(translateY, {
@@ -51,8 +51,8 @@ export function ToastProvider() {
       style={{ transform: [{ translateY }], position: 'absolute', top: 50, left: 16, right: 16, zIndex: 9999 }}
       pointerEvents="none"
     >
-      <View className={`${bgColors[type]} rounded-2xl px-5 py-4 flex-row items-center shadow-md shadow-gray-900/20`}>
-        <Icon name={icons[type]} size={20} color="#fff" />
+      <View className="bg-gray-900 rounded-2xl px-5 py-4 flex-row items-center shadow-md shadow-gray-900/30">
+        <Icon name={icons[type]} size={20} color={iconColors[type]} />
         <Text className="text-white text-sm font-semibold flex-1 ml-3">{message}</Text>
       </View>
     </Animated.View>

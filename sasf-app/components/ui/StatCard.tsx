@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Icon, type IoniconsName } from './Icon';
 import { MiniChart } from './MiniChart';
+import { cardShadow } from '../../constants/shadows';
 
 interface StatCardProps {
   icon: IoniconsName;
@@ -16,7 +17,7 @@ interface StatCardProps {
 
 export function StatCard({ icon, iconColor = '#2563EB', iconBg = 'bg-primary-50', title, value, subtitle, chartData, chartColor, onPress }: StatCardProps) {
   const Content = (
-    <View className="bg-surface rounded-2xl p-4 border border-gray-100 shadow-sm shadow-gray-900/5">
+    <View className="bg-surface rounded-2xl p-4 border border-gray-100" style={cardShadow}>
       <View className="flex-row items-center justify-between mb-3">
         <View className={`w-9 h-9 rounded-xl ${iconBg} items-center justify-center`}>
           <Icon name={icon} size={17} color={iconColor} />

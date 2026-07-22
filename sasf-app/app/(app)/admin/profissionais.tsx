@@ -57,28 +57,44 @@ export default function ProfissionaisScreen() {
   if (error) return <ErrorMessage message="Erro ao carregar profissionais." onRetry={refetch} />;
 
   const pendingCount = professionals?.filter((p) => p.statusValidacao === 'PENDING').length || 0;
+  const approvedCount = professionals?.filter((p) => p.statusValidacao === 'APPROVED').length || 0;
+  const rejectedCount = professionals?.filter((p) => p.statusValidacao === 'REJECTED').length || 0;
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['bottom']}>
       <View className="px-5 pt-2 pb-2">
-        {filter === undefined && pendingCount > 0 && (
-          <View className="bg-yellow-50 rounded-xl p-3 mb-3 border border-yellow-200 flex-row items-center">
-            <Icon name="time-outline" size={16} color="#B45309" />
-            <Text className="text-xs text-yellow-800 font-semibold ml-2 flex-1">{pendingCount} profissional(is) aguardando validação</Text>
+        {filter === undefined && (professionals?.length ?? 0) > 0 && (
+          <View className="flex-row gap-2.5 mb-3">
+            <View className="flex-1 bg-warning-light rounded-2xl px-3 py-2.5">
+              <Text className="text-yellow-700 text-xl font-extrabold">{pendingCount}</Text>
+              <Text className="text-yellow-700 text-[11px] font-semibold mt-0.5">Pendentes</Text>
+            </View>
+            <View className="flex-1 bg-success-light rounded-2xl px-3 py-2.5">
+              <Text className="text-success text-xl font-extrabold">{approvedCount}</Text>
+              <Text className="text-green-700 text-[11px] font-semibold mt-0.5">Aprovados</Text>
+            </View>
+            <View className="flex-1 bg-danger-light rounded-2xl px-3 py-2.5">
+              <Text className="text-danger text-xl font-extrabold">{rejectedCount}</Text>
+              <Text className="text-red-700 text-[11px] font-semibold mt-0.5">Rejeitados</Text>
+            </View>
           </View>
         )}
 
         <View className="flex-row gap-2 mb-2">
-          {FILTERS.map((f) => (
-            <TouchableOpacity
-              key={f.label}
-              className={`px-3 py-2 rounded-xl ${filter === f.key ? 'bg-primary' : 'bg-surface border border-gray-200'}`}
-              onPress={() => setFilter(f.key)}
-              activeOpacity={0.7}
-            >
-              <Text className={`text-xs font-semibold ${filter === f.key ? 'text-white' : 'text-gray-600'}`}>{f.label}</Text>
-            </TouchableOpacity>
-          ))}
+          {FILTERS.map((f) => {
+            const active = filter === f.key;
+            return (
+              <TouchableOpacity
+                key={f.label}
+                className="px-3 py-2 rounded-xl border"
+                style={active ? { backgroundColor: '#2563EB', borderColor: '#2563EB' } : { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
+                onPress={() => setFilter(f.key)}
+                activeOpacity={0.7}
+              >
+                <Text className="text-xs font-semibold" style={{ color: active ? '#fff' : '#475569' }}>{f.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
 

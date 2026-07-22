@@ -19,7 +19,7 @@ export function ProgressRing({ progress, size = 100, strokeWidth = 8, color = '#
   return (
     <View style={{ width: size, height: size }} className="items-center justify-center">
       <Svg width={size} height={size} style={{ position: 'absolute' }}>
-        <Circle cx={size / 2} cy={size / 2} r={radius} stroke="#E2E8F0" strokeWidth={strokeWidth} fill="none" />
+        <Circle cx={size / 2} cy={size / 2} r={radius} stroke="#F1F5F9" strokeWidth={strokeWidth} fill="none" />
         <Circle cx={size / 2} cy={size / 2} r={radius} stroke={color} strokeWidth={strokeWidth} fill="none"
           strokeDasharray={`${circumference}`} strokeDashoffset={strokeDashoffset}
           strokeLinecap="round" transform={`rotate(-90 ${size / 2} ${size / 2})`} />

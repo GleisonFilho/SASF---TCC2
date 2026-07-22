@@ -225,11 +225,31 @@ export interface HealthScoreBreakdown {
   maximo: number;
 }
 
+export interface HealthScoreTrendPoint {
+  data: string;
+  score: number;
+}
+
 export interface HealthScoreResult {
   score: number;
   classificacao: 'Excelente' | 'Bom' | 'Regular' | 'Atenção' | 'Crítico';
   breakdown: HealthScoreBreakdown[];
+  trend: HealthScoreTrendPoint[];
   explicacao: string;
+}
+
+// ─── Relatório ────────────────────────────────────────
+
+export interface RelatorioSaude {
+  condicoes: CondicaoSaude[];
+  alergias: Alergia[];
+  medicamentos: MedicamentoUso[];
+  sinaisVitais: SinalVital[];
+  sintomas: RegistroSintoma[];
+  nutricional: { perfil: PerfilNutricional | null; pesoRecente: RegistroPeso[] };
+  exercicios: RegistroExercicio[];
+  psicologico: RegistroPsicologico[];
+  geradoEm: string;
 }
 
 // ─── Dispositivos (arquitetura preparada, sem integração real) ──

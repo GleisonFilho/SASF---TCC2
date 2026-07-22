@@ -9,6 +9,7 @@ import { Button } from '../../../components/ui/Button';
 import { Icon } from '../../../components/ui/Icon';
 import { IconBadge } from '../../../components/ui/IconBadge';
 import { StatusBadge } from '../../../components/ui/StatusBadge';
+import { useToast } from '../../../components/ui/Toast';
 import { sharingStatusConfig as statusConfig } from '../../../utils/statusConfig';
 import type { Compartilhamento } from '../../../types';
 
@@ -70,9 +71,13 @@ export default function CompartilhamentoScreen() {
   const { data: sharings, isLoading, error, refetch } = useSharings();
   const revokeMutation = useRevokeSharing();
   const router = useRouter();
+  const toast = useToast();
 
   if (isLoading) return <LoadingScreen />;
   if (error) return <ErrorMessage message="Erro ao carregar compartilhamentos." onRetry={refetch} />;
+
+  const activeCount = sharings?.filter((s) => s.status === 'ATIVO').length || 0;
+  const expiredCount = sharings?.filter((s) => s.status === 'EXPIRADO').length || 0;
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -82,6 +87,19 @@ export default function CompartilhamentoScreen() {
           <Text className="text-2xl font-bold text-gray-900 ml-2 tracking-tight">Compartilhamentos</Text>
         </View>
         <Text className="text-sm text-gray-400 mt-1">Gerencie o acesso dos profissionais aos dados de saúde</Text>
+
+        {!!sharings?.length && (
+          <View className="flex-row gap-2.5 mt-4">
+            <View className="flex-1 bg-success-light rounded-2xl px-3.5 py-3">
+              <Text className="text-success text-xl font-extrabold">{activeCount}</Text>
+              <Text className="text-success text-xs font-semibold mt-0.5">Acesso ativo</Text>
+            </View>
+            <View className="flex-1 bg-gray-100 rounded-2xl px-3.5 py-3">
+              <Text className="text-gray-600 text-xl font-extrabold">{expiredCount}</Text>
+              <Text className="text-gray-500 text-xs font-semibold mt-0.5">Expirado</Text>
+            </View>
+          </View>
+        )}
       </View>
 
       <FlatList
@@ -91,7 +109,10 @@ export default function CompartilhamentoScreen() {
         renderItem={({ item }) => (
           <ShareCard
             item={item}
-            onRevoke={() => revokeMutation.mutate(item.id)}
+            onRevoke={() => revokeMutation.mutate(item.id, {
+              onSuccess: () => toast.show('Compartilhamento revogado.', 'success'),
+              onError: () => toast.show('Erro ao revogar compartilhamento.', 'error'),
+            })}
             onPress={() => router.push(`/(app)/compartilhamento/${item.id}`)}
           />
         )}

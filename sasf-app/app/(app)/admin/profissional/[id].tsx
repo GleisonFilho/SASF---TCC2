@@ -102,8 +102,8 @@ export default function ProfissionalDetalheScreen() {
       {/* Ações */}
       {isPending && (
         <View className="gap-3">
-          <Button title="Aprovar Profissional" onPress={handleApprove} loading={approveMutation.isPending} />
-          <Button title="Rejeitar" onPress={() => setShowRejectModal(true)} variant="danger" />
+          <Button title="Aprovar Profissional" onPress={handleApprove} variant="secondary" loading={approveMutation.isPending} />
+          <Button title="Rejeitar" onPress={() => setShowRejectModal(true)} variant="danger-outline" />
         </View>
       )}
 

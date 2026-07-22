@@ -34,19 +34,6 @@ function shortDate(iso: string): string {
   return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 }
 
-function dayLabel(date: Date): string {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
-  const target = new Date(date); target.setHours(0, 0, 0, 0);
-  if (target.getTime() === today.getTime()) return 'Hoje';
-  if (target.getTime() === yesterday.getTime()) return 'Ontem';
-  return target.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-}
-
-function fmtTime(date: Date): string {
-  return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-}
-
 function getIMCCategory(imc: number): { label: string; color: string } {
   if (imc < 18.5) return { label: 'Abaixo do peso', color: '#06B6D4' };
   if (imc < 25) return { label: 'Peso normal', color: '#16A34A' };
@@ -71,13 +58,8 @@ const intensidadeOptions = [
 ];
 const intensidadeColor: Record<string, string> = { LEVE: '#16A34A', MODERADA: '#D97706', INTENSA: '#DC2626' };
 
-function moodTone(value: number): string {
-  if (value >= 7) return '#16A34A';
-  if (value >= 4) return '#D97706';
-  return '#DC2626';
-}
-
 type ModalType = 'weight' | 'water' | 'meal' | 'exercise' | 'psychology' | 'profile' | null;
+type WellnessTab = 'nutricao' | 'exercicios' | 'psicologia';
 
 function SectionHeading({ icon, title, actionLabel, onAction }: { icon: IoniconsName; title: string; actionLabel?: string; onAction?: () => void }) {
   return (
@@ -124,11 +106,38 @@ function EvolutionCard({ icon, title, data, color, unit }: { icon: IoniconsName;
   );
 }
 
+function TabBar({ tab, onChange }: { tab: WellnessTab; onChange: (t: WellnessTab) => void }) {
+  const items: { key: WellnessTab; label: string }[] = [
+    { key: 'nutricao', label: 'Nutrição' },
+    { key: 'exercicios', label: 'Exercícios' },
+    { key: 'psicologia', label: 'Psicologia' },
+  ];
+  return (
+    <View className="flex-row gap-2 bg-gray-100 rounded-2xl p-1.5 mb-5">
+      {items.map((item) => {
+        const active = tab === item.key;
+        return (
+          <TouchableOpacity
+            key={item.key}
+            className="flex-1 py-2.5 rounded-xl items-center"
+            style={active ? { backgroundColor: '#FFFFFF', shadowColor: '#0F172A', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 1 } : undefined}
+            onPress={() => onChange(item.key)}
+            activeOpacity={0.7}
+          >
+            <Text className="text-xs font-bold" style={{ color: active ? '#2563EB' : '#64748B' }}>{item.label}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
 export default function WellnessScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const membroId = id || '';
   const router = useRouter();
   const toast = useToast();
+  const [tab, setTab] = useState<WellnessTab>('nutricao');
 
   const profile = useNutritionProfile(membroId);
   const upsertProfile = useUpsertNutritionProfile(membroId);
@@ -174,8 +183,11 @@ export default function WellnessScreen() {
   const moodData = [...(psych.data || [])].reverse().slice(-10).map((p) => ({ label: shortDate(p.dataHora), value: p.humor }));
   const energyData = [...(psych.data || [])].reverse().slice(-10).map((p) => ({ label: shortDate(p.dataHora), value: p.energia }));
 
-  const evolutionCharts = [
+  const nutritionCharts = [
     { key: 'peso', icon: 'scale-outline' as const, title: 'Evolução do Peso', data: weightData, color: '#2563EB', unit: 'kg' },
+  ].filter((c) => c.data.length >= 2);
+
+  const psychCharts = [
     { key: 'sono', icon: 'moon-outline' as const, title: 'Qualidade do Sono', data: sleepData, color: '#6366F1' },
     { key: 'humor', icon: 'happy-outline' as const, title: 'Humor', data: moodData, color: '#F59E0B' },
     { key: 'energia', icon: 'flash-outline' as const, title: 'Energia', data: energyData, color: '#8B5CF6' },
@@ -262,6 +274,7 @@ export default function WellnessScreen() {
           score={healthScore.data.score}
           classificacao={healthScore.data.classificacao}
           breakdown={healthScore.data.breakdown}
+          trend={healthScore.data.trend}
           explicacao={healthScore.data.explicacao}
         />
       )}
@@ -287,57 +300,6 @@ export default function WellnessScreen() {
         </View>
       )}
 
-      {/* Hoje: água e atividade em rings */}
-      <SectionHeading icon="today-outline" title="Hoje" />
-      <View className="flex-row gap-3 mb-6">
-        <RingStat icon="water" color="#06B6D4" progress={totalWater / metaAgua} value={`${totalWater}`} label="Água" sublabel={`ml de ${metaAgua}`} />
-        <RingStat icon="fitness" color="#16A34A" progress={exerciseMin / metaExercicioMin} value={`${exerciseMin}`} label="Atividade" sublabel={`min de ${metaExercicioMin}`} />
-      </View>
-
-      {/* Peso & IMC */}
-      {currentWeight && (
-        <View className="bg-surface rounded-2xl p-4 mb-6 border border-gray-100 shadow-sm shadow-gray-900/5">
-          <View className="flex-row items-center justify-between">
-            <View>
-              <Text className="text-xs text-gray-500">Peso atual</Text>
-              <Text className="text-2xl font-bold text-gray-900 mt-0.5">{currentWeight.pesoKg} <Text className="text-sm font-semibold text-gray-400">kg</Text></Text>
-            </View>
-            {weightTrend.length >= 2 && <MiniChart data={weightTrend} width={90} height={36} color="#2563EB" />}
-          </View>
-
-          {currentIMC !== null && imcCategory && (
-            <View className="mt-4 pt-4 border-t border-gray-50">
-              <View className="flex-row items-center justify-between mb-2">
-                <Text className="text-xs text-gray-500">IMC</Text>
-                <View className="flex-row items-center">
-                  <Text className="text-sm font-bold text-gray-900 mr-2">{currentIMC.toFixed(1)}</Text>
-                  <View style={{ backgroundColor: `${imcCategory.color}1A` }} className="px-2.5 py-1 rounded-full">
-                    <Text style={{ color: imcCategory.color }} className="text-[11px] font-bold">{imcCategory.label}</Text>
-                  </View>
-                </View>
-              </View>
-              <View className="h-2 rounded-full overflow-hidden flex-row bg-gray-100">
-                <View style={{ flex: 3.5, backgroundColor: '#06B6D4' }} />
-                <View style={{ flex: 6.5, backgroundColor: '#16A34A' }} />
-                <View style={{ flex: 5, backgroundColor: '#F59E0B' }} />
-                <View style={{ flex: 5, backgroundColor: '#DC2626' }} />
-              </View>
-              <View style={{ marginLeft: `${imcPct}%` }} className="w-2.5 h-2.5 rounded-full bg-white border-2 border-gray-900 -mt-2" />
-            </View>
-          )}
-        </View>
-      )}
-
-      {/* Evolução */}
-      {evolutionCharts.length > 0 && (
-        <View className="mb-6">
-          <SectionHeading icon="trending-up-outline" title="Evolução" />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-5 px-5">
-            {evolutionCharts.map((c) => <EvolutionCard key={c.key} icon={c.icon} title={c.title} data={c.data} color={c.color} unit={c.unit} />)}
-          </ScrollView>
-        </View>
-      )}
-
       {/* Linha do tempo */}
       {timelineEntries.length > 0 && (
         <View className="mb-6">
@@ -352,7 +314,6 @@ export default function WellnessScreen() {
                   <Text className="text-sm font-semibold text-gray-900">{entry.titulo}</Text>
                   <Text className="text-xs text-gray-400 mt-0.5">{entry.detalhe}</Text>
                 </View>
-                <Text className="text-xs text-gray-400">{dayLabel(entry.data)} · {fmtTime(entry.data)}</Text>
               </View>
             ))}
           </View>
@@ -369,133 +330,222 @@ export default function WellnessScreen() {
         <Text className="text-primary text-sm font-semibold ml-2">Ver todas as estatísticas</Text>
       </TouchableOpacity>
 
-      {/* Perfil nutricional */}
-      <SectionHeading
-        icon="clipboard-outline"
-        title="Perfil Nutricional"
-        actionLabel="Editar"
-        onAction={() => {
-          setForm({
-            alturaAtualCm: profile.data?.alturaAtualCm?.toString() || '',
-            metaPesoKg: profile.data?.metaPesoKg?.toString() || '',
-            metaAguaMl: profile.data?.metaAguaMl?.toString() || '',
-          });
-          setModal('profile');
-        }}
-      />
-      {profile.data ? (
-        <View className="flex-row gap-3 mb-6">
-          <View className="flex-1 bg-surface rounded-2xl p-3.5 border border-gray-100 shadow-sm shadow-gray-900/5 items-center">
-            <Icon name="resize-outline" size={17} color="#2563EB" />
-            <Text className="text-sm font-bold text-gray-900 mt-1.5">{profile.data.alturaAtualCm || '—'} cm</Text>
-            <Text className="text-[11px] text-gray-400">Altura</Text>
-          </View>
-          <View className="flex-1 bg-surface rounded-2xl p-3.5 border border-gray-100 shadow-sm shadow-gray-900/5 items-center">
-            <Icon name="flag-outline" size={17} color="#10B981" />
-            <Text className="text-sm font-bold text-gray-900 mt-1.5">{profile.data.metaPesoKg || '—'} kg</Text>
-            <Text className="text-[11px] text-gray-400">Meta de peso</Text>
-          </View>
-          <View className="flex-1 bg-surface rounded-2xl p-3.5 border border-gray-100 shadow-sm shadow-gray-900/5 items-center">
-            <Icon name="water-outline" size={17} color="#06B6D4" />
-            <Text className="text-sm font-bold text-gray-900 mt-1.5">{profile.data.metaAguaMl || '—'} ml</Text>
-            <Text className="text-[11px] text-gray-400">Meta de água</Text>
-          </View>
-        </View>
-      ) : (
-        <View className="bg-surface rounded-2xl p-4 mb-6 border border-gray-100 shadow-sm shadow-gray-900/5 items-center">
-          <Text className="text-gray-400 text-sm">Configure seu perfil nutricional.</Text>
-        </View>
-      )}
+      <TabBar tab={tab} onChange={setTab} />
 
-      {/* Água rápida */}
-      <View className="flex-row gap-2 mb-6">
-        {[200, 300, 500].map((ml) => (
-          <TouchableOpacity key={ml} className="flex-1 bg-accent-light rounded-xl py-3 items-center" activeOpacity={0.7}
-            onPress={() => createWater.mutate({ quantidadeMl: ml, dataHora: new Date().toISOString() }, { onSuccess: () => toast.show(`+${ml}ml!`, 'success') })}>
-            <Text className="text-accent-dark font-bold">+{ml}ml</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Peso */}
-      <HealthSection<RegistroPeso> title="Peso" icon="scale-outline" emptyIcon="scale-outline" emptyText="Registre seu peso." data={weight.data} isLoading={weight.isLoading} addLabel="Registrar" onAdd={() => openModal('weight')} onDelete={(item) => deleteWeight.mutate(item.id)} getId={(i) => i.id} getLabel={(i) => `${i.pesoKg}kg`}
-        renderItem={(item) => (
-          <View className="flex-row items-center">
-            <IconBadge icon="scale" color="#2563EB" />
-            <View className="flex-1 ml-3 flex-row items-center justify-between">
-              <View>
-                <Text className="font-bold text-gray-900">{item.pesoKg} kg</Text>
-                {item.imc && <Text className="text-xs text-gray-400">IMC: {item.imc}</Text>}
-              </View>
-              <Text className="text-xs text-gray-400">{fmtDate(item.dataHora)}</Text>
-            </View>
+      {tab === 'nutricao' && (
+        <>
+          {/* Hidratação */}
+          <View className="flex-row gap-3 mb-6">
+            <RingStat icon="water" color="#06B6D4" progress={totalWater / metaAgua} value={`${totalWater}`} label="Água" sublabel={`ml de ${metaAgua}`} />
           </View>
-        )}
-      />
 
-      {/* Refeições */}
-      <HealthSection<RegistroRefeicao> title="Refeições" icon="restaurant-outline" emptyIcon="restaurant-outline" emptyText="Registre suas refeições." data={meals.data} isLoading={meals.isLoading} addLabel="Registrar" onAdd={() => openModal('meal')} onDelete={(item) => deleteMeal.mutate(item.id)} getId={(i) => i.id} getLabel={(i) => i.descricao}
-        renderItem={(item) => (
-          <View className="flex-row items-start">
-            <IconBadge icon="restaurant" color="#F97316" />
-            <View className="flex-1 ml-3">
+          {/* Peso & IMC */}
+          {currentWeight && (
+            <View className="bg-surface rounded-2xl p-4 mb-6 border border-gray-100 shadow-sm shadow-gray-900/5">
               <View className="flex-row items-center justify-between">
-                <Text className="font-semibold text-gray-900">{tipoRefeicaoLabel[item.tipo] || item.tipo}</Text>
-                <Text className="text-xs text-gray-400">{fmtDate(item.dataHora)}</Text>
+                <View>
+                  <Text className="text-xs text-gray-500">Peso atual</Text>
+                  <Text className="text-2xl font-bold text-gray-900 mt-0.5">{currentWeight.pesoKg} <Text className="text-sm font-semibold text-gray-400">kg</Text></Text>
+                </View>
+                {weightTrend.length >= 2 && <MiniChart data={weightTrend} width={90} height={36} color="#2563EB" />}
               </View>
-              <Text className="text-xs text-gray-500 mt-1">{item.descricao}</Text>
-              {item.calorias && (
-                <View className="bg-orange-50 self-start px-2.5 py-1 rounded-full mt-1.5">
-                  <Text className="text-xs font-semibold" style={{ color: '#F97316' }}>{item.calorias} kcal</Text>
+
+              {currentIMC !== null && imcCategory && (
+                <View className="mt-4 pt-4 border-t border-gray-50">
+                  <View className="flex-row items-center justify-between mb-2">
+                    <Text className="text-xs text-gray-500">IMC</Text>
+                    <View className="flex-row items-center">
+                      <Text className="text-sm font-bold text-gray-900 mr-2">{currentIMC.toFixed(1)}</Text>
+                      <View style={{ backgroundColor: `${imcCategory.color}1A` }} className="px-2.5 py-1 rounded-full">
+                        <Text style={{ color: imcCategory.color }} className="text-[11px] font-bold">{imcCategory.label}</Text>
+                      </View>
+                    </View>
+                  </View>
+                  <View className="h-2 rounded-full overflow-hidden flex-row bg-gray-100">
+                    <View style={{ flex: 3.5, backgroundColor: '#06B6D4' }} />
+                    <View style={{ flex: 6.5, backgroundColor: '#16A34A' }} />
+                    <View style={{ flex: 5, backgroundColor: '#F59E0B' }} />
+                    <View style={{ flex: 5, backgroundColor: '#DC2626' }} />
+                  </View>
+                  <View style={{ marginLeft: `${imcPct}%` }} className="w-2.5 h-2.5 rounded-full bg-white border-2 border-gray-900 -mt-2" />
                 </View>
               )}
             </View>
-          </View>
-        )}
-      />
+          )}
 
-      {/* Exercícios */}
-      <HealthSection<RegistroExercicio> title="Exercícios" icon="barbell-outline" emptyIcon="walk-outline" emptyText="Registre seus exercícios." data={exercises.data} isLoading={exercises.isLoading} addLabel="Registrar" onAdd={() => openModal('exercise')} onDelete={(item) => deleteExercise.mutate(item.id)} getId={(i) => i.id} getLabel={(i) => tipoExercicioLabel[i.tipo] || i.tipo}
-        renderItem={(item) => {
-          const color = intensidadeColor[item.intensidade] || '#16A34A';
-          return (
-            <View className="flex-row items-start">
-              <IconBadge icon="barbell" color="#16A34A" />
-              <View className="flex-1 ml-3">
-                <View className="flex-row items-center justify-between">
-                  <Text className="font-semibold text-gray-900">{tipoExercicioLabel[item.tipo]}</Text>
+          {/* Evolução do peso */}
+          {nutritionCharts.length > 0 && (
+            <View className="mb-6">
+              <SectionHeading icon="trending-up-outline" title="Evolução" />
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-5 px-5">
+                {nutritionCharts.map((c) => <EvolutionCard key={c.key} icon={c.icon} title={c.title} data={c.data} color={c.color} unit={c.unit} />)}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Perfil nutricional */}
+          <SectionHeading
+            icon="clipboard-outline"
+            title="Perfil Nutricional"
+            actionLabel="Editar"
+            onAction={() => {
+              setForm({
+                alturaAtualCm: profile.data?.alturaAtualCm?.toString() || '',
+                metaPesoKg: profile.data?.metaPesoKg?.toString() || '',
+                metaAguaMl: profile.data?.metaAguaMl?.toString() || '',
+              });
+              setModal('profile');
+            }}
+          />
+          {profile.data ? (
+            <View className="flex-row gap-3 mb-6">
+              <View className="flex-1 bg-surface rounded-2xl p-3.5 border border-gray-100 shadow-sm shadow-gray-900/5 items-center">
+                <Icon name="resize-outline" size={17} color="#2563EB" />
+                <Text className="text-sm font-bold text-gray-900 mt-1.5">{profile.data.alturaAtualCm || '—'} cm</Text>
+                <Text className="text-[11px] text-gray-400">Altura</Text>
+              </View>
+              <View className="flex-1 bg-surface rounded-2xl p-3.5 border border-gray-100 shadow-sm shadow-gray-900/5 items-center">
+                <Icon name="flag-outline" size={17} color="#10B981" />
+                <Text className="text-sm font-bold text-gray-900 mt-1.5">{profile.data.metaPesoKg || '—'} kg</Text>
+                <Text className="text-[11px] text-gray-400">Meta de peso</Text>
+              </View>
+              <View className="flex-1 bg-surface rounded-2xl p-3.5 border border-gray-100 shadow-sm shadow-gray-900/5 items-center">
+                <Icon name="water-outline" size={17} color="#06B6D4" />
+                <Text className="text-sm font-bold text-gray-900 mt-1.5">{profile.data.metaAguaMl || '—'} ml</Text>
+                <Text className="text-[11px] text-gray-400">Meta de água</Text>
+              </View>
+            </View>
+          ) : (
+            <View className="bg-surface rounded-2xl p-4 mb-6 border border-gray-100 shadow-sm shadow-gray-900/5 items-center">
+              <Text className="text-gray-400 text-sm">Configure seu perfil nutricional.</Text>
+            </View>
+          )}
+
+          {/* Água rápida */}
+          <View className="flex-row gap-2 mb-6">
+            {[200, 300, 500].map((ml) => (
+              <TouchableOpacity key={ml} className="flex-1 bg-accent-light rounded-xl py-3 items-center" activeOpacity={0.7}
+                onPress={() => createWater.mutate({ quantidadeMl: ml, dataHora: new Date().toISOString() }, {
+                  onSuccess: () => toast.show(`+${ml}ml!`, 'success'),
+                  onError: () => toast.show('Erro ao registrar água.', 'error'),
+                })}>
+                <Text className="text-accent-dark font-bold">+{ml}ml</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Peso */}
+          <HealthSection<RegistroPeso> title="Peso" icon="scale-outline" emptyIcon="scale-outline" emptyText="Registre seu peso." data={weight.data} isLoading={weight.isLoading} addLabel="Registrar" onAdd={() => openModal('weight')} onDelete={(item) => deleteWeight.mutate(item.id)} getId={(i) => i.id} getLabel={(i) => `${i.pesoKg}kg`}
+            renderItem={(item) => (
+              <View className="flex-row items-center">
+                <IconBadge icon="scale" color="#2563EB" />
+                <View className="flex-1 ml-3 flex-row items-center justify-between">
+                  <View>
+                    <Text className="font-bold text-gray-900">{item.pesoKg} kg</Text>
+                    {item.imc && <Text className="text-xs text-gray-400">IMC: {item.imc}</Text>}
+                  </View>
                   <Text className="text-xs text-gray-400">{fmtDate(item.dataHora)}</Text>
                 </View>
-                <View className="flex-row items-center gap-2 mt-1.5">
-                  <Text className="text-xs text-gray-500">{item.duracaoMin}min{item.caloriasEst ? ` · ${item.caloriasEst}kcal` : ''}</Text>
-                  <View style={{ backgroundColor: `${color}1A` }} className="px-2 py-0.5 rounded-full">
-                    <Text style={{ color }} className="text-[11px] font-semibold">{item.intensidade}</Text>
+              </View>
+            )}
+          />
+
+          {/* Refeições */}
+          <HealthSection<RegistroRefeicao> title="Refeições" icon="restaurant-outline" emptyIcon="restaurant-outline" emptyText="Registre suas refeições." data={meals.data} isLoading={meals.isLoading} addLabel="Registrar" onAdd={() => openModal('meal')} onDelete={(item) => deleteMeal.mutate(item.id)} getId={(i) => i.id} getLabel={(i) => i.descricao}
+            renderItem={(item) => (
+              <View className="flex-row items-start">
+                <IconBadge icon="restaurant" color="#F97316" />
+                <View className="flex-1 ml-3">
+                  <View className="flex-row items-center justify-between">
+                    <Text className="font-semibold text-gray-900">{tipoRefeicaoLabel[item.tipo] || item.tipo}</Text>
+                    <Text className="text-xs text-gray-400">{fmtDate(item.dataHora)}</Text>
+                  </View>
+                  <Text className="text-xs text-gray-500 mt-1">{item.descricao}</Text>
+                  {item.calorias && (
+                    <View className="bg-orange-50 self-start px-2.5 py-1 rounded-full mt-1.5">
+                      <Text className="text-xs font-semibold" style={{ color: '#F97316' }}>{item.calorias} kcal</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            )}
+          />
+        </>
+      )}
+
+      {tab === 'exercicios' && (
+        <>
+          {/* Meta OMS */}
+          <View className="flex-row gap-3 mb-6">
+            <RingStat icon="fitness" color="#16A34A" progress={exerciseMin / metaExercicioMin} value={`${exerciseMin}`} label="Atividade" sublabel={`min de ${metaExercicioMin}`} />
+          </View>
+
+          {/* Exercícios */}
+          <HealthSection<RegistroExercicio> title="Exercícios" icon="barbell-outline" emptyIcon="walk-outline" emptyText="Registre seus exercícios." data={exercises.data} isLoading={exercises.isLoading} addLabel="Registrar" onAdd={() => openModal('exercise')} onDelete={(item) => deleteExercise.mutate(item.id)} getId={(i) => i.id} getLabel={(i) => tipoExercicioLabel[i.tipo] || i.tipo}
+            renderItem={(item) => {
+              const color = intensidadeColor[item.intensidade] || '#16A34A';
+              return (
+                <View className="flex-row items-start">
+                  <IconBadge icon="barbell" color="#16A34A" />
+                  <View className="flex-1 ml-3">
+                    <View className="flex-row items-center justify-between">
+                      <Text className="font-semibold text-gray-900">{tipoExercicioLabel[item.tipo]}</Text>
+                      <Text className="text-xs text-gray-400">{fmtDate(item.dataHora)}</Text>
+                    </View>
+                    <View className="flex-row items-center gap-2 mt-1.5">
+                      <Text className="text-xs text-gray-500">{item.duracaoMin}min{item.caloriasEst ? ` · ${item.caloriasEst}kcal` : ''}</Text>
+                      <View style={{ backgroundColor: `${color}1A` }} className="px-2 py-0.5 rounded-full">
+                        <Text style={{ color }} className="text-[11px] font-semibold">{item.intensidade}</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              );
+            }}
+          />
+        </>
+      )}
+
+      {tab === 'psicologia' && (
+        <>
+          {psychCharts.length > 0 && (
+            <View className="mb-6">
+              <SectionHeading icon="trending-up-outline" title="Evolução" />
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-5 px-5">
+                {psychCharts.map((c) => <EvolutionCard key={c.key} icon={c.icon} title={c.title} data={c.data} color={c.color} />)}
+              </ScrollView>
+            </View>
+          )}
+
+          <TouchableOpacity
+            className="bg-warning rounded-2xl py-3.5 mb-6 flex-row items-center justify-center"
+            onPress={() => openModal('psychology')}
+            activeOpacity={0.8}
+          >
+            <Icon name="happy" size={18} color="#fff" />
+            <Text className="text-white font-bold text-sm ml-2">Registrar como me sinto hoje</Text>
+          </TouchableOpacity>
+
+          {/* Bem-estar psicológico */}
+          <HealthSection<RegistroPsicologico> title="Bem-estar" icon="pulse-outline" emptyIcon="pulse-outline" emptyText="Registre seu estado emocional." data={psych.data} isLoading={psych.isLoading} addLabel="Registrar" onAdd={() => openModal('psychology')} onDelete={(item) => deletePsych.mutate(item.id)} getId={(i) => i.id} getLabel={(i) => `Humor: ${i.humor}/10`}
+            renderItem={(item) => (
+              <View className="flex-row items-start">
+                <IconBadge icon="happy" color={moodTone(item.humor)} />
+                <View className="flex-1 ml-3">
+                  <Text className="text-xs text-gray-400 mb-1.5">{fmtDate(item.dataHora)}</Text>
+                  <View className="flex-row gap-2 flex-wrap">
+                    <Badge label={`Humor ${item.humor}`} value={item.humor} />
+                    <Badge label={`Sono ${item.qualidadeSono}`} value={item.qualidadeSono} />
+                    <Badge label={`Energia ${item.energia}`} value={item.energia} />
+                    <Badge label={`Ansiedade ${item.ansiedade}`} value={item.ansiedade} invert />
+                    <Badge label={`Estresse ${item.estresse}`} value={item.estresse} invert />
                   </View>
                 </View>
               </View>
-            </View>
-          );
-        }}
-      />
-
-      {/* Bem-estar psicológico */}
-      <HealthSection<RegistroPsicologico> title="Bem-estar" icon="pulse-outline" emptyIcon="pulse-outline" emptyText="Registre seu estado emocional." data={psych.data} isLoading={psych.isLoading} addLabel="Registrar" onAdd={() => openModal('psychology')} onDelete={(item) => deletePsych.mutate(item.id)} getId={(i) => i.id} getLabel={(i) => `Humor: ${i.humor}/10`}
-        renderItem={(item) => (
-          <View className="flex-row items-start">
-            <IconBadge icon="happy" color={moodTone(item.humor)} />
-            <View className="flex-1 ml-3">
-              <Text className="text-xs text-gray-400 mb-1.5">{fmtDate(item.dataHora)}</Text>
-              <View className="flex-row gap-2 flex-wrap">
-                <Badge label={`Humor ${item.humor}`} value={item.humor} />
-                <Badge label={`Sono ${item.qualidadeSono}`} value={item.qualidadeSono} />
-                <Badge label={`Energia ${item.energia}`} value={item.energia} />
-                <Badge label={`Ansiedade ${item.ansiedade}`} value={item.ansiedade} invert />
-                <Badge label={`Estresse ${item.estresse}`} value={item.estresse} invert />
-              </View>
-            </View>
-          </View>
-        )}
-      />
+            )}
+          />
+        </>
+      )}
 
       {/* MODALS */}
       <AddModal visible={modal === 'profile'} title="Perfil Nutricional" onClose={closeModal}>
@@ -542,6 +592,12 @@ export default function WellnessScreen() {
       </AddModal>
     </ScreenContainer>
   );
+}
+
+function moodTone(value: number): string {
+  if (value >= 7) return '#16A34A';
+  if (value >= 4) return '#D97706';
+  return '#DC2626';
 }
 
 function Badge({ label, value, invert }: { label: string; value: number; invert?: boolean }) {

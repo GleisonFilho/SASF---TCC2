@@ -8,8 +8,8 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: '#2563EB',
         tabBarInactiveTintColor: '#94A3B8',
-        tabBarStyle: { paddingBottom: 8, paddingTop: 8, height: 64, borderTopColor: '#E2E8F0', borderTopWidth: 1, elevation: 0 },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', fontFamily: 'Inter_600SemiBold' },
+        tabBarStyle: { paddingBottom: 8, paddingTop: 8, height: 64, borderTopColor: '#F1F5F9', borderTopWidth: 1, elevation: 0, shadowColor: '#0F172A', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.06, shadowRadius: 14 },
+        tabBarLabelStyle: { fontSize: 10.5, fontWeight: '700', fontFamily: 'PlusJakartaSans_700Bold' },
       }}
     >
       <Tabs.Screen name="home" options={{

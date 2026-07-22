@@ -72,17 +72,21 @@ export default function NovoCompartilhamentoScreen() {
       <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Membro da Família</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
         <View className="flex-row gap-2">
-          {members?.map((m) => (
-            <TouchableOpacity
-              key={m.id}
-              className={`px-4 py-3 rounded-xl border ${selectedMembro === m.id ? 'bg-primary border-primary' : 'bg-surface border-gray-200'}`}
-              onPress={() => setSelectedMembro(m.id)}
-              activeOpacity={0.7}
-            >
-              <Text className={`text-sm font-semibold ${selectedMembro === m.id ? 'text-white' : 'text-gray-600'}`}>{m.nome}</Text>
-              <Text className={`text-xs ${selectedMembro === m.id ? 'text-white/70' : 'text-gray-400'}`}>{m.parentesco}</Text>
-            </TouchableOpacity>
-          ))}
+          {members?.map((m) => {
+            const active = selectedMembro === m.id;
+            return (
+              <TouchableOpacity
+                key={m.id}
+                className="px-4 py-3 rounded-xl border"
+                style={active ? { backgroundColor: '#2563EB', borderColor: '#2563EB' } : { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
+                onPress={() => setSelectedMembro(m.id)}
+                activeOpacity={0.7}
+              >
+                <Text className="text-sm font-semibold" style={{ color: active ? '#fff' : '#475569' }}>{m.nome}</Text>
+                <Text className="text-xs" style={{ color: active ? 'rgba(255,255,255,0.7)' : '#94A3B8' }}>{m.parentesco}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </ScrollView>
 
@@ -96,14 +100,23 @@ export default function NovoCompartilhamentoScreen() {
         onChangeText={setProfissionalEmail}
       />
 
-      <Input
-        label="Dias de validade"
-        icon="calendar-outline"
-        placeholder="30"
-        keyboardType="numeric"
-        value={diasExpiracao}
-        onChangeText={setDiasExpiracao}
-      />
+      <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 mt-1">Expira em</Text>
+      <View className="flex-row gap-2 mb-4">
+        {['7', '30', '90'].map((dias) => {
+          const selected = diasExpiracao === dias;
+          return (
+            <TouchableOpacity
+              key={dias}
+              className="flex-1 py-3 rounded-xl border items-center"
+              style={selected ? { backgroundColor: '#EFF6FF', borderColor: '#2563EB' } : { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
+              onPress={() => setDiasExpiracao(dias)}
+              activeOpacity={0.7}
+            >
+              <Text className="text-sm font-bold" style={{ color: selected ? '#2563EB' : '#64748B' }}>{dias} dias</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
       <Input
         label="Observações (opcional)"
@@ -131,12 +144,13 @@ export default function NovoCompartilhamentoScreen() {
           return (
             <TouchableOpacity
               key={e.key}
-              className={`flex-row items-center px-3.5 py-2 rounded-xl border ${selected ? 'bg-primary border-primary' : 'bg-surface border-gray-200'}`}
+              className="flex-row items-center px-3.5 py-2 rounded-xl border"
+              style={selected ? { backgroundColor: '#2563EB', borderColor: '#2563EB' } : { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
               onPress={() => toggleEscopo(e.key)}
               activeOpacity={0.8}
             >
               {selected && <Icon name="checkmark" size={13} color="#fff" />}
-              <Text className={`text-xs font-semibold ${selected ? 'text-white ml-1' : 'text-gray-600'}`}>{e.label}</Text>
+              <Text className={`text-xs font-semibold ${selected ? 'ml-1' : ''}`} style={{ color: selected ? '#fff' : '#475569' }}>{e.label}</Text>
             </TouchableOpacity>
           );
         })}

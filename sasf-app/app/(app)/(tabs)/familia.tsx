@@ -5,13 +5,14 @@ import { useFamilyMembers, useDeleteFamilyMember } from '../../../hooks/useFamil
 import { ListSkeleton } from '../../../components/ui/Skeleton';
 import { ErrorMessage } from '../../../components/ui/ErrorMessage';
 import { EmptyState } from '../../../components/ui/EmptyState';
-import { Button } from '../../../components/ui/Button';
 import { Icon } from '../../../components/ui/Icon';
+import { MemberScoreRing } from '../../../components/ui/MemberScoreRing';
 import { useToast } from '../../../components/ui/Toast';
+import { useAuthStore } from '../../../store/authStore';
 import { calcAge } from '../../../utils/date';
 import type { MembroFamilia } from '../../../types';
 
-function MemberCard({ member, onPress, onDelete }: { member: MembroFamilia; onPress: () => void; onDelete: () => void }) {
+function MemberCard({ member, isYou, onPress, onDelete }: { member: MembroFamilia; isYou: boolean; onPress: () => void; onDelete: () => void }) {
   const age = calcAge(member.dataNascimento);
 
   const handleLongPress = () => {
@@ -22,12 +23,17 @@ function MemberCard({ member, onPress, onDelete }: { member: MembroFamilia; onPr
   };
 
   return (
-    <TouchableOpacity className="bg-surface rounded-2xl p-4 mb-3 border border-gray-100 shadow-sm shadow-gray-900/5 flex-row items-center" onPress={onPress} onLongPress={handleLongPress} activeOpacity={0.7}>
-      <View className="bg-primary-50 w-12 h-12 rounded-full items-center justify-center mr-4">
-        <Text className="text-primary font-bold text-lg">{member.nome[0]}</Text>
-      </View>
-      <View className="flex-1">
-        <Text className="font-bold text-gray-900 text-base">{member.nome}</Text>
+    <TouchableOpacity className="bg-surface rounded-2xl p-3.5 mb-3 border border-gray-100 shadow-sm shadow-gray-900/5 flex-row items-center" onPress={onPress} onLongPress={handleLongPress} activeOpacity={0.7}>
+      <MemberScoreRing membroId={member.id} nome={member.nome} size={52} />
+      <View className="flex-1 ml-3.5">
+        <View className="flex-row items-center gap-1.5">
+          <Text className="font-bold text-gray-900 text-base">{member.nome}</Text>
+          {isYou && (
+            <View className="bg-primary-50 px-1.5 py-0.5 rounded-lg">
+              <Text className="text-primary text-[10px] font-extrabold">VOCÊ</Text>
+            </View>
+          )}
+        </View>
         <Text className="text-xs text-gray-400 mt-0.5">{member.parentesco} · {age} anos · {member.sexo}</Text>
       </View>
       <Icon name="chevron-forward" size={18} color="#CBD5E1" />
@@ -40,6 +46,7 @@ export default function FamiliaScreen() {
   const deleteMutation = useDeleteFamilyMember();
   const router = useRouter();
   const toast = useToast();
+  const user = useAuthStore((s) => s.user);
 
   if (isLoading) return (
     <SafeAreaView className="flex-1 bg-background">
@@ -63,6 +70,7 @@ export default function FamiliaScreen() {
         renderItem={({ item }) => (
           <MemberCard
             member={item}
+            isYou={item.nome === user?.nome}
             onPress={() => router.push(`/(app)/membro/${item.id}`)}
             onDelete={() => deleteMutation.mutate(item.id, {
               onSuccess: () => toast.show('Membro removido.', 'success'),
@@ -76,7 +84,15 @@ export default function FamiliaScreen() {
       />
 
       <View className="px-5 pb-5">
-        <Button title="Novo Membro" onPress={() => router.push('/(app)/membro/novo')} />
+        <TouchableOpacity
+          className="border-[1.5px] border-gray-300 rounded-2xl py-4 items-center justify-center flex-row"
+          style={{ borderStyle: 'dashed' }}
+          onPress={() => router.push('/(app)/membro/novo')}
+          activeOpacity={0.7}
+        >
+          <Icon name="person-add-outline" size={19} color="#2563EB" />
+          <Text className="text-primary font-bold text-sm ml-2">Novo membro</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );

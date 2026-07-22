@@ -7,6 +7,7 @@ import { Icon, type IoniconsName } from '../../../../components/ui/Icon';
 import { useVitalSigns, useSymptoms } from '../../../../hooks/useHealthRecords';
 import { useWeightRecords, useExercises, usePsychologyRecords } from '../../../../hooks/useWellness';
 import { tipoMedicaoLabels } from '../../../../utils/labels';
+import { formatFullDatePt } from '../../../../utils/date';
 
 type TimelineEntry = {
   id: string;
@@ -26,7 +27,7 @@ function dayLabel(date: Date): string {
 
   if (target.getTime() === today.getTime()) return 'Hoje';
   if (target.getTime() === yesterday.getTime()) return 'Ontem';
-  return target.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+  return formatFullDatePt(target, { year: true });
 }
 
 function fmtTime(date: Date): string {

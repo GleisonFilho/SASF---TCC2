@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'expo-image-picker';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { Input } from '../../../components/ui/Input';
 import { ChipSelect } from '../../../components/ui/ChipSelect';
@@ -41,9 +44,39 @@ export default function EditarPerfilScreen() {
   const [endereco, setEndereco] = useState(user?.endereco || '');
   const [cidade, setCidade] = useState(user?.cidade || '');
   const [estado, setEstado] = useState(user?.estado || '');
+  const [fotoUrl, setFotoUrl] = useState(user?.fotoUrl || '');
+  const [processingPhoto, setProcessingPhoto] = useState(false);
 
-  const handlePhotoPress = () => {
-    toast.show('Funcionalidade de foto será adicionada em breve.', 'info');
+  const handlePhotoPress = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      toast.show('Permissão de acesso às fotos negada.', 'error');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.9,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    setProcessingPhoto(true);
+    try {
+      // Redimensiona pra 400x400 e comprime antes de guardar como data URI —
+      // evita mandar/armazenar fotos de câmera em resolução alta (vários MB).
+      const rendered = await ImageManipulator.manipulate(result.assets[0].uri)
+        .resize({ width: 400, height: 400 })
+        .renderAsync();
+      const saved = await rendered.saveAsync({ base64: true, compress: 0.6, format: SaveFormat.JPEG });
+      if (!saved.base64) throw new Error('Sem dados da imagem.');
+      setFotoUrl(`data:image/jpeg;base64,${saved.base64}`);
+    } catch {
+      toast.show('Erro ao processar a imagem.', 'error');
+    } finally {
+      setProcessingPhoto(false);
+    }
   };
 
   const handleSave = () => {
@@ -56,6 +89,7 @@ export default function EditarPerfilScreen() {
       {
         nome: nome.trim(),
         telefone: telefone || undefined,
+        fotoUrl: fotoUrl || undefined,
         dataNascimento: dataNascimento || undefined,
         sexo: sexo || undefined,
         endereco: endereco || undefined,
@@ -77,15 +111,24 @@ export default function EditarPerfilScreen() {
   return (
     <ScreenContainer>
       <View className="items-center mb-6 mt-1">
-        <TouchableOpacity onPress={handlePhotoPress} activeOpacity={0.7}>
-          <View className="bg-primary-50 w-24 h-24 rounded-full items-center justify-center border-[3px] border-white shadow-sm shadow-gray-900/10">
-            <Text className="text-primary font-bold text-4xl">{nome?.[0] || '?'}</Text>
-          </View>
+        <TouchableOpacity onPress={handlePhotoPress} activeOpacity={0.7} disabled={processingPhoto}>
+          {fotoUrl ? (
+            <Image source={{ uri: fotoUrl }} style={{ width: 96, height: 96, borderRadius: 48 }} />
+          ) : (
+            <LinearGradient
+              colors={['#2563EB', '#06B6D4']}
+              start={{ x: 0.15, y: 0 }}
+              end={{ x: 0.85, y: 1 }}
+              style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Text className="text-white font-extrabold text-4xl">{nome?.[0] || '?'}</Text>
+            </LinearGradient>
+          )}
           <View className="absolute bottom-0 right-0 bg-primary w-8 h-8 rounded-full items-center justify-center border-2 border-surface">
-            <Icon name="camera" size={14} color="#fff" />
+            <Icon name={processingPhoto ? 'hourglass' : 'camera'} size={14} color="#fff" />
           </View>
         </TouchableOpacity>
-        <Text className="text-xs text-gray-400 mt-2.5">Toque para alterar a foto</Text>
+        <Text className="text-xs text-gray-400 mt-2.5">{processingPhoto ? 'Processando...' : 'Toque para alterar a foto'}</Text>
       </View>
 
       <SectionCard icon="person-outline" title="Informações pessoais">

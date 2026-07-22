@@ -13,7 +13,7 @@ export function AddModal({ visible, title, onClose, children }: AddModalProps) {
     <Modal visible={visible} animationType="slide" transparent>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 justify-end">
         <TouchableOpacity className="flex-1 bg-black/30" onPress={onClose} activeOpacity={1} />
-        <View className="bg-white rounded-t-3xl px-5 pt-5 pb-8 max-h-[80%]">
+        <View className="bg-white rounded-t-4xl px-5 pt-5 pb-8 max-h-[80%]">
           <View className="items-center mb-4">
             <View className="w-10 h-1 rounded-full bg-gray-200" />
           </View>

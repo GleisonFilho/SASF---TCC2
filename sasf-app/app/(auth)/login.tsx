@@ -63,7 +63,13 @@ export default function LoginScreen() {
           <Button title="Entrar" onPress={handleSubmit(onSubmit)} loading={loginMutation.isPending} />
         </View>
 
-        <View className="flex-row justify-center items-center mt-6">
+        <View className="flex-row items-center mt-5">
+          <View className="flex-1 h-px bg-gray-200" />
+          <Text className="text-gray-400 text-xs font-semibold mx-3">ou</Text>
+          <View className="flex-1 h-px bg-gray-200" />
+        </View>
+
+        <View className="flex-row justify-center items-center mt-5">
           <Text className="text-gray-500 text-sm">Não tem conta? </Text>
           <Link href="/(auth)/register" className="text-primary font-bold text-sm">Cadastre-se</Link>
         </View>

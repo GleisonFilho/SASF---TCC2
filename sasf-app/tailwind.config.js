@@ -9,10 +9,15 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter_400Regular'],
-        medium: ['Inter_500Medium'],
-        semibold: ['Inter_600SemiBold'],
-        bold: ['Inter_700Bold'],
+        sans: ['PlusJakartaSans_400Regular'],
+        medium: ['PlusJakartaSans_500Medium'],
+        semibold: ['PlusJakartaSans_600SemiBold'],
+        bold: ['PlusJakartaSans_700Bold'],
+        extrabold: ['PlusJakartaSans_800ExtraBold'],
+      },
+      borderRadius: {
+        '3xl': '22px',
+        '4xl': '26px',
       },
       colors: {
         // Escala neutra (slate) — alinhada a Texto principal #0F172A (900),
@@ -41,14 +46,16 @@ module.exports = {
           700: '#B45309',
           800: '#92400E',
         },
-        primary: { DEFAULT: '#2563EB', light: '#DBEAFE', dark: '#1D4ED8', 50: '#EFF6FF' },
+        primary: { DEFAULT: '#2563EB', light: '#DBEAFE', dark: '#1D4ED8', 50: '#EFF6FF', 600: '#1D4ED8' },
         secondary: { DEFAULT: '#10B981', light: '#D1FAE5', dark: '#059669' },
         accent: { DEFAULT: '#06B6D4', light: '#CFFAFE', dark: '#0E7490' },
+        lime: { DEFAULT: '#84CC16', light: '#ECFCCB' },
         background: '#F8FAFC',
         surface: '#FFFFFF',
         success: { DEFAULT: '#16A34A', light: '#DCFCE7' },
         warning: { DEFAULT: '#F59E0B', light: '#FEF3C7' },
         danger: { DEFAULT: '#DC2626', light: '#FEE2E2' },
+        error: { DEFAULT: '#DC2626', light: '#FEE2E2' },
         info: { DEFAULT: '#06B6D4', light: '#CFFAFE' },
       },
     },

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { Input } from '../../../components/ui/Input';
 import { ChipSelect } from '../../../components/ui/ChipSelect';
@@ -13,6 +14,7 @@ import { Icon, type IoniconsName } from '../../../components/ui/Icon';
 import { HealthSection } from '../../../components/health/HealthSection';
 import { AddModal } from '../../../components/health/AddModal';
 import { useFamilyMember } from '../../../hooks/useFamilyMembers';
+import { useHealthScore } from '../../../hooks/useWellness';
 import {
   useConditions, useCreateCondition, useDeleteCondition,
   useAllergies, useCreateAllergy, useDeleteAllergy,
@@ -23,37 +25,14 @@ import {
 } from '../../../hooks/useHealthRecords';
 import { calcAge } from '../../../utils/date';
 import { tipoMedicaoLabels } from '../../../utils/labels';
+import { statusColors, gravidadeColors, intensityTone, tipoMedicaoIcon, getScoreColor } from '../../../utils/health-tones';
+import { accentShadow } from '../../../constants/shadows';
 import type { CondicaoSaude, Alergia, MedicamentoUso, ContatoEmergencia, SinalVital, RegistroSintoma } from '../../../types';
 
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-const statusColors: Record<string, { bg: string; text: string; color: string }> = {
-  ATIVA: { bg: 'bg-red-100', text: 'text-red-700', color: '#DC2626' },
-  CONTROLADA: { bg: 'bg-yellow-100', text: 'text-yellow-700', color: '#D97706' },
-  RESOLVIDA: { bg: 'bg-green-100', text: 'text-green-700', color: '#16A34A' },
-};
-const gravidadeColors: Record<string, { bg: string; text: string; color: string }> = {
-  LEVE: { bg: 'bg-green-100', text: 'text-green-700', color: '#16A34A' },
-  MODERADA: { bg: 'bg-yellow-100', text: 'text-yellow-700', color: '#D97706' },
-  GRAVE: { bg: 'bg-red-100', text: 'text-red-700', color: '#DC2626' },
-};
-
-function intensityTone(value: number): { bg: string; text: string; color: string } {
-  if (value >= 7) return { bg: 'bg-red-100', text: 'text-red-700', color: '#DC2626' };
-  if (value >= 4) return { bg: 'bg-yellow-100', text: 'text-yellow-700', color: '#D97706' };
-  return { bg: 'bg-green-100', text: 'text-green-700', color: '#16A34A' };
-}
-
-const tipoMedicaoIcon: Record<string, { icon: IoniconsName; color: string }> = {
-  PRESSAO: { icon: 'heart', color: '#DC2626' },
-  GLICEMIA: { icon: 'water', color: '#EC4899' },
-  PESO: { icon: 'scale', color: '#2563EB' },
-  TEMPERATURA: { icon: 'thermometer', color: '#F59E0B' },
-  FC: { icon: 'pulse', color: '#DC2626' },
-  SPO2: { icon: 'fitness', color: '#06B6D4' },
-};
 const tipoMedicaoOptions = Object.entries(tipoMedicaoLabels).map(([value, label]) => ({ value, label }));
 const gravidadeOptions = [
   { value: 'LEVE', label: 'Leve' },
@@ -92,6 +71,8 @@ export default function MembroDetailScreen() {
   const symptoms = useSymptoms(membroId);
   const createSymptom = useCreateSymptom(membroId);
   const deleteSymptom = useDeleteSymptom(membroId);
+
+  const healthScore = useHealthScore(membroId);
 
   const toast = useToast();
   const [modal, setModal] = useState<ModalType>(null);
@@ -168,29 +149,47 @@ export default function MembroDetailScreen() {
 
   return (
     <ScreenContainer>
-      <View className="bg-surface rounded-2xl p-5 border border-gray-100 shadow-sm shadow-gray-900/5 mb-6">
+      <View className="bg-surface rounded-4xl p-5 border border-gray-100 shadow-sm shadow-gray-900/5 mb-6">
         <View className="items-center">
           <View className="bg-primary-50 w-16 h-16 rounded-full items-center justify-center mb-3">
             <Text className="text-primary font-bold text-2xl">{member.nome[0]}</Text>
           </View>
           <Text className="text-xl font-bold text-gray-900">{member.nome}</Text>
           <Text className="text-sm text-gray-400 mt-1">{member.parentesco} · {calcAge(member.dataNascimento)} anos · {member.sexo}</Text>
+          {healthScore.data && (
+            <View className="flex-row items-center mt-2.5" style={{ backgroundColor: `${getScoreColor(healthScore.data.score)}1A` }}>
+              <View className="flex-row items-center px-3 py-1.5 rounded-full">
+                <View className="w-1.5 h-1.5 rounded-full mr-1.5" style={{ backgroundColor: getScoreColor(healthScore.data.score) }} />
+                <Text className="text-xs font-extrabold" style={{ color: getScoreColor(healthScore.data.score) }}>
+                  Health Score {healthScore.data.score} · {healthScore.data.classificacao}
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
       </View>
 
       <TouchableOpacity
-        className="bg-accent rounded-2xl p-4 mb-6 flex-row items-center shadow-sm shadow-accent/20"
         onPress={() => router.push(`/(app)/membro/${membroId}/wellness`)}
         activeOpacity={0.8}
+        style={accentShadow}
+        className="mb-6"
       >
-        <View className="w-10 h-10 rounded-xl bg-white/15 items-center justify-center mr-3">
-          <Icon name="pulse" size={20} color="#fff" />
-        </View>
-        <View className="flex-1">
-          <Text className="text-white font-bold text-base">Saúde+</Text>
-          <Text className="text-white/70 text-xs">Nutrição, exercícios, bem-estar e insights</Text>
-        </View>
-        <Icon name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
+        <LinearGradient
+          colors={['#06B6D4', '#0E7490']}
+          start={{ x: 0.15, y: 0 }}
+          end={{ x: 0.85, y: 1 }}
+          style={{ borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center' }}
+        >
+          <View className="w-10 h-10 rounded-xl bg-white/15 items-center justify-center mr-3">
+            <Icon name="pulse" size={20} color="#fff" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-white font-bold text-base">Saúde+</Text>
+            <Text className="text-white/70 text-xs">Nutrição, exercícios, bem-estar e insights</Text>
+          </View>
+          <Icon name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
+        </LinearGradient>
       </TouchableOpacity>
 
       <View className="flex-row gap-3 mb-6">
@@ -201,6 +200,10 @@ export default function MembroDetailScreen() {
         <TouchableOpacity className="flex-1 bg-surface rounded-2xl p-3 border border-gray-100 shadow-sm shadow-gray-900/5 items-center" onPress={() => router.push(`/(app)/membro/${membroId}/estatisticas`)} activeOpacity={0.7}>
           <Icon name="stats-chart-outline" size={20} color="#2563EB" />
           <Text className="text-xs font-semibold text-gray-700 mt-1">Estatísticas</Text>
+        </TouchableOpacity>
+        <TouchableOpacity className="flex-1 bg-surface rounded-2xl p-3 border border-gray-100 shadow-sm shadow-gray-900/5 items-center" onPress={() => router.push(`/(app)/membro/${membroId}/relatorio`)} activeOpacity={0.7}>
+          <Icon name="document-text-outline" size={20} color="#2563EB" />
+          <Text className="text-xs font-semibold text-gray-700 mt-1">Relatório</Text>
         </TouchableOpacity>
       </View>
 

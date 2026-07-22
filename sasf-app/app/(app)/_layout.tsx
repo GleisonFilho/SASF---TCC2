@@ -6,7 +6,7 @@ export default function AppLayout() {
       screenOptions={{
         headerShown: false,
         headerTintColor: '#2563EB',
-        headerTitleStyle: { fontFamily: 'Inter_600SemiBold', fontSize: 17, color: '#0F172A' },
+        headerTitleStyle: { fontFamily: 'PlusJakartaSans_700Bold', fontSize: 17, color: '#0F172A' },
         headerShadowVisible: false,
         headerBackTitle: '',
         headerStyle: { backgroundColor: '#FFFFFF' },

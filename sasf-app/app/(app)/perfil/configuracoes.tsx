@@ -5,6 +5,7 @@ import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { Icon, type IoniconsName } from '../../../components/ui/Icon';
 import { useToast } from '../../../components/ui/Toast';
 import { useSettingsStore, type ThemePreference } from '../../../store/settingsStore';
+import { notificationsService } from '../../../services/notifications.service';
 import { useLogout } from '../../../hooks/useAuth';
 
 const themeOptions: { value: ThemePreference; label: string; icon: 'sunny-outline' | 'moon-outline' | 'phone-portrait-outline' }[] = [
@@ -22,11 +23,46 @@ const TERMS_TEXT = `Ao utilizar o SASF, você concorda em fornecer informações
 As recomendações geradas pelo sistema de insights são informativas e baseadas em regras gerais de saúde, não constituindo aconselhamento médico individualizado. Em caso de emergência, procure atendimento médico imediato.`;
 
 export default function ConfiguracoesScreen() {
-  const { theme, notificationsEnabled, setTheme, setNotificationsEnabled } = useSettingsStore();
+  const { theme, lembretesMedicamentos, resumoSemanal, setTheme, setLembretesMedicamentos, setResumoSemanal } = useSettingsStore();
   const toast = useToast();
   const queryClient = useQueryClient();
   const logoutMutation = useLogout();
   const [expanded, setExpanded] = useState<'privacy' | 'terms' | null>(null);
+  const notificationsAvailable = notificationsService.isAvailable();
+
+  const handleToggleMedicationReminder = async (enabled: boolean) => {
+    if (enabled) {
+      if (!notificationsService.isAvailable()) {
+        toast.show('Notificações não funcionam no Expo Go (SDK 53+). Use um development build.', 'error');
+        return;
+      }
+      const granted = await notificationsService.enableMedicationReminder();
+      if (!granted) {
+        toast.show('Permissão de notificações negada. Ative nas configurações do celular.', 'error');
+        return;
+      }
+    } else {
+      await notificationsService.disableMedicationReminder();
+    }
+    setLembretesMedicamentos(enabled);
+  };
+
+  const handleToggleWeeklySummary = async (enabled: boolean) => {
+    if (enabled) {
+      if (!notificationsService.isAvailable()) {
+        toast.show('Notificações não funcionam no Expo Go (SDK 53+). Use um development build.', 'error');
+        return;
+      }
+      const granted = await notificationsService.enableWeeklySummary();
+      if (!granted) {
+        toast.show('Permissão de notificações negada. Ative nas configurações do celular.', 'error');
+        return;
+      }
+    } else {
+      await notificationsService.disableWeeklySummary();
+    }
+    setResumoSemanal(enabled);
+  };
 
   const handleClearCache = () => {
     Alert.alert('Limpar cache', 'Isso vai recarregar todos os dados do aplicativo. Deseja continuar?', [
@@ -53,24 +89,42 @@ export default function ConfiguracoesScreen() {
       {/* Tema */}
       <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5 px-1">Aparência</Text>
       <View className="flex-row gap-2 mb-6">
-        {themeOptions.map((opt) => (
-          <TouchableOpacity
-            key={opt.value}
-            className={`flex-1 py-3.5 rounded-xl items-center border ${theme === opt.value ? 'bg-primary border-primary shadow-sm shadow-primary/20' : 'bg-surface border-gray-200'}`}
-            onPress={() => setTheme(opt.value)}
-            activeOpacity={0.8}
-          >
-            <Icon name={opt.icon} size={20} color={theme === opt.value ? '#fff' : '#64748B'} />
-            <Text className={`text-xs font-semibold mt-1.5 ${theme === opt.value ? 'text-white' : 'text-gray-600'}`}>{opt.label}</Text>
-          </TouchableOpacity>
-        ))}
+        {themeOptions.map((opt) => {
+          const active = theme === opt.value;
+          return (
+            <TouchableOpacity
+              key={opt.value}
+              className="flex-1 py-3.5 rounded-xl items-center border"
+              style={active
+                ? { backgroundColor: '#2563EB', borderColor: '#2563EB', shadowColor: '#2563EB', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 2 }
+                : { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
+              onPress={() => setTheme(opt.value)}
+              activeOpacity={0.8}
+            >
+              <Icon name={opt.icon} size={20} color={active ? '#fff' : '#64748B'} />
+              <Text className="text-xs font-semibold mt-1.5" style={{ color: active ? '#fff' : '#475569' }}>{opt.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {/* Notificações */}
       <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5 px-1">Notificações</Text>
+      {!notificationsAvailable && (
+        <View className="bg-warning-light rounded-2xl p-3.5 mb-3 border border-warning/20 flex-row items-start">
+          <Icon name="information-circle" size={16} color="#B45309" />
+          <Text className="text-xs text-yellow-800 ml-2 flex-1 leading-4">
+            Notificações não funcionam no Expo Go a partir do SDK 53. Para testá-las de verdade, gere um development build (`npx expo run:android` ou EAS Build).
+          </Text>
+        </View>
+      )}
       <View className="bg-surface rounded-2xl border border-gray-100 shadow-sm shadow-gray-900/5 mb-6">
-        <Row icon="notifications-outline" iconBg="bg-primary-50" iconColor="#2563EB" label="Notificações push" right={
-          <Switch value={notificationsEnabled} onValueChange={setNotificationsEnabled} trackColor={{ true: '#2563EB' }} />
+        <Row icon="medical-outline" iconBg="bg-danger-light" iconColor="#DC2626" label="Lembretes de medicamentos" right={
+          <Switch value={lembretesMedicamentos} onValueChange={handleToggleMedicationReminder} trackColor={{ true: '#2563EB' }} />
+        } />
+        <Divider />
+        <Row icon="stats-chart-outline" iconBg="bg-primary-50" iconColor="#2563EB" label="Resumo semanal" right={
+          <Switch value={resumoSemanal} onValueChange={handleToggleWeeklySummary} trackColor={{ true: '#2563EB' }} />
         } />
       </View>
 
