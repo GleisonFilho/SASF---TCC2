@@ -17,7 +17,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://SUBSTITUA-PELA-URL-DO-RENDER.onrender.com/api"
+        "EXPO_PUBLIC_API_URL": "https://sasf-backend.onrender.com/api"
       }
     },
     "production": {
