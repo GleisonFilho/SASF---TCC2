@@ -18,6 +18,7 @@ import nutritionRoutes from './routes/nutrition.routes';
 import exerciseRoutes from './routes/exercise.routes';
 import psychologyRoutes from './routes/psychology.routes';
 import insightsRoutes from './routes/insights.routes';
+import reportRoutes from './routes/report.routes';
 import sharingRoutes from './routes/sharing.routes';
 import adminRoutes from './routes/admin.routes';
 
@@ -25,7 +26,10 @@ const app = express();
 
 app.use(helmet());
 app.use(cors({ origin: env.CORS_ORIGIN }));
-app.use(express.json());
+// Limite padrão do Express (100kb) é pequeno demais pra foto de perfil em
+// base64 (fotoUrl); aumentado para acomodar isso sem precisar de upload de
+// arquivo/armazenamento externo.
+app.use(express.json({ limit: '5mb' }));
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -50,6 +54,7 @@ app.use('/api/family-members/:membroId/nutrition', nutritionRoutes);
 app.use('/api/family-members/:membroId/exercises', exerciseRoutes);
 app.use('/api/family-members/:membroId/psychology', psychologyRoutes);
 app.use('/api/family-members/:membroId/insights', insightsRoutes);
+app.use('/api/family-members/:membroId/report', reportRoutes);
 app.use('/api', sharingRoutes);
 app.use('/api/admin', adminRoutes);
 
