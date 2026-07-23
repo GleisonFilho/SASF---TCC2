@@ -1,9 +1,14 @@
 import { api } from './api';
-import type { Compartilhamento, EscopoCompartilhamento, LogAcesso, AcessoProfissional, PacienteCompartilhado, AnotacaoProfissional } from '../types';
+import type { Compartilhamento, EscopoCompartilhamento, LogAcesso, AcessoProfissional, PacienteCompartilhado, AnotacaoProfissional, ProfessionalLookup } from '../types';
 
 export const sharingService = {
   async list(): Promise<Compartilhamento[]> {
     const { data } = await api.get('/sharing');
+    return data;
+  },
+
+  async lookupProfessional(email: string): Promise<ProfessionalLookup> {
+    const { data } = await api.get('/sharing/professional-lookup', { params: { email } });
     return data;
   },
 

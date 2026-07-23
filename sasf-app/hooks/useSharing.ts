@@ -2,10 +2,22 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sharingService } from '../services/sharing.service';
 import type { EscopoCompartilhamento } from '../types';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function useSharings() {
   return useQuery({
     queryKey: ['sharings'],
     queryFn: sharingService.list,
+  });
+}
+
+export function useProfessionalLookup(email: string) {
+  return useQuery({
+    queryKey: ['professionalLookup', email],
+    queryFn: () => sharingService.lookupProfessional(email),
+    enabled: EMAIL_REGEX.test(email),
+    retry: false,
+    staleTime: 60_000,
   });
 }
 

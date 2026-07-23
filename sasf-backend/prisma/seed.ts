@@ -247,6 +247,7 @@ async function main() {
       escopos: { create: [
         { categoriaDado: 'VITAIS' }, { categoriaDado: 'CONDICOES' }, { categoriaDado: 'ALERGIAS' },
         { categoriaDado: 'MEDICAMENTOS' }, { categoriaDado: 'PERFIL' },
+        { categoriaDado: 'NUTRICAO' }, { categoriaDado: 'EXERCICIOS' },
       ]},
     },
   });
@@ -257,7 +258,7 @@ async function main() {
       codigoToken: randomBytes(32).toString('hex'),
       dataExpiracao: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
       observacoes: 'Acompanhamento psicológico',
-      escopos: { create: [{ categoriaDado: 'SINTOMAS' }, { categoriaDado: 'CONDICOES' }] },
+      escopos: { create: [{ categoriaDado: 'SINTOMAS' }, { categoriaDado: 'CONDICOES' }, { categoriaDado: 'PSICOLOGIA' }] },
     },
   });
 

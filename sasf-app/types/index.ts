@@ -164,6 +164,15 @@ export interface PacienteCompartilhado {
   };
 }
 
+export interface ProfessionalLookup {
+  id: string;
+  nome: string;
+  statusConta: 'ATIVO' | 'PENDENTE' | 'BLOQUEADO';
+  categoriaConselho: string | null;
+  especialidade: string | null;
+  statusValidacao: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+}
+
 export interface AnotacaoProfissional {
   id: string;
   membroId: string;

@@ -12,6 +12,21 @@ export const sharingController = {
     }
   },
 
+  async lookupProfessional(req: Request, res: Response, next: NextFunction) {
+    try {
+      const email = req.query.email;
+      if (typeof email !== 'string' || !email.trim()) {
+        res.status(400).json({ error: 'Informe um e-mail válido.' });
+        return;
+      }
+      const result = await sharingService.lookupProfessional(email);
+      res.json(result);
+    } catch (err: any) {
+      if (err.status) { res.status(err.status).json({ error: err.message }); return; }
+      next(err);
+    }
+  },
+
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await sharingService.getById(req.params.id as string, (req as any).user.userId);

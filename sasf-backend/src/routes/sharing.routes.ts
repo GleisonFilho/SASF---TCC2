@@ -8,6 +8,7 @@ const router = Router();
 
 router.get('/sharing', authMiddleware, sharingController.list);
 router.post('/sharing', authMiddleware, validate(createSharingSchema), sharingController.create);
+router.get('/sharing/professional-lookup', authMiddleware, sharingController.lookupProfessional);
 router.get('/sharing/:id', authMiddleware, sharingController.getById);
 router.patch('/sharing/:id/revoke', authMiddleware, sharingController.revoke);
 router.get('/sharing/:id/logs', authMiddleware, sharingController.getAccessLogs);

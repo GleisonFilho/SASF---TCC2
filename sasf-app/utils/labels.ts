@@ -29,6 +29,21 @@ export const tipoExercicioLabels: Record<string, string> = {
 
 export const intensidadeExercicioColor: Record<string, string> = { LEVE: '#16A34A', MODERADA: '#D97706', INTENSA: '#DC2626' };
 
+export const categoriaConselhoLabels: Record<string, string> = {
+  CRM: 'Medicina', COREN: 'Enfermagem', CRP: 'Psicologia', CRN: 'Nutrição',
+  CREFITO: 'Fisioterapia', CRF: 'Farmácia', CRO: 'Odontologia',
+};
+
+export const categoriaEscoposSugeridos: Record<string, string[]> = {
+  CRM: ['VITAIS', 'SINTOMAS', 'CONDICOES', 'ALERGIAS', 'MEDICAMENTOS', 'PERFIL', 'HEALTH_SCORE'],
+  COREN: ['VITAIS', 'MEDICAMENTOS', 'CONDICOES', 'SINTOMAS', 'PERFIL'],
+  CRP: ['PSICOLOGIA', 'SINTOMAS', 'CONDICOES', 'PERFIL', 'HEALTH_SCORE'],
+  CRN: ['NUTRICAO', 'EXERCICIOS', 'CONDICOES', 'ALERGIAS', 'VITAIS', 'PERFIL'],
+  CREFITO: ['EXERCICIOS', 'CONDICOES', 'SINTOMAS', 'VITAIS', 'PERFIL'],
+  CRF: ['MEDICAMENTOS', 'ALERGIAS', 'CONDICOES', 'PERFIL'],
+  CRO: ['CONDICOES', 'ALERGIAS', 'MEDICAMENTOS', 'PERFIL'],
+};
+
 export const escopoIcons: Record<string, import('../components/ui/Icon').IoniconsName> = {
   PERFIL: 'person-outline',
   MEMBROS: 'people-outline',

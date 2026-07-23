@@ -40,6 +40,22 @@ export const sharingService = {
     return sharingRepository.findAllByUserId(userId);
   },
 
+  async lookupProfessional(email: string) {
+    const user = await userRepository.findByEmail(email);
+    if (!user || user.tipoPerfil !== 'PROFISSIONAL') {
+      throw { status: 404, message: 'Profissional não encontrado com este e-mail.' };
+    }
+
+    return {
+      id: user.id,
+      nome: user.nome,
+      statusConta: user.statusConta,
+      categoriaConselho: user.profissionalDetalhe?.categoriaConselho ?? null,
+      especialidade: user.profissionalDetalhe?.especialidade ?? null,
+      statusValidacao: user.profissionalDetalhe?.statusValidacao ?? null,
+    };
+  },
+
   async getById(id: string, userId: string) {
     const token = await sharingRepository.findById(id);
     if (!token) {

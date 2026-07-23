@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { Input } from '../../../components/ui/Input';
@@ -7,9 +7,15 @@ import { Icon } from '../../../components/ui/Icon';
 import { useToast } from '../../../components/ui/Toast';
 import { Button } from '../../../components/ui/Button';
 import { useFamilyMembers } from '../../../hooks/useFamilyMembers';
-import { useCreateSharing } from '../../../hooks/useSharing';
-import { escopoLabels } from '../../../utils/labels';
+import { useCreateSharing, useProfessionalLookup } from '../../../hooks/useSharing';
+import { escopoLabels, categoriaConselhoLabels, categoriaEscoposSugeridos } from '../../../utils/labels';
 import type { EscopoCompartilhamento } from '../../../types';
+
+const validacaoTag: Record<string, { label: string; bg: string; text: string }> = {
+  APPROVED: { label: 'Aprovado', bg: 'bg-success-light', text: 'text-success' },
+  PENDING: { label: 'Cadastro em análise', bg: 'bg-warning-light', text: 'text-warning' },
+  REJECTED: { label: 'Cadastro não aprovado', bg: 'bg-danger-light', text: 'text-danger' },
+};
 
 const ESCOPOS_DISPONIVEIS: { key: EscopoCompartilhamento; label: string }[] = [
   { key: 'VITAIS', label: escopoLabels.VITAIS },
@@ -34,15 +40,37 @@ export default function NovoCompartilhamentoScreen() {
   const toast = useToast();
   const [selectedMembro, setSelectedMembro] = useState('');
   const [profissionalEmail, setProfissionalEmail] = useState('');
+  const [debouncedEmail, setDebouncedEmail] = useState('');
   const [diasExpiracao, setDiasExpiracao] = useState('30');
   const [observacoes, setObservacoes] = useState('');
   const [escopos, setEscopos] = useState<EscopoCompartilhamento[]>([]);
+  const [escoposTouched, setEscoposTouched] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedEmail(profissionalEmail.trim().toLowerCase()), 500);
+    return () => clearTimeout(t);
+  }, [profissionalEmail]);
+
+  useEffect(() => {
+    setEscoposTouched(false);
+  }, [debouncedEmail]);
+
+  const lookup = useProfessionalLookup(debouncedEmail);
+
+  useEffect(() => {
+    const categoria = lookup.data?.categoriaConselho;
+    if (categoria && !escoposTouched && categoriaEscoposSugeridos[categoria]) {
+      setEscopos(categoriaEscoposSugeridos[categoria] as EscopoCompartilhamento[]);
+    }
+  }, [lookup.data, escoposTouched]);
 
   const toggleEscopo = (key: EscopoCompartilhamento) => {
+    setEscoposTouched(true);
     setEscopos((prev) => prev.includes(key) ? prev.filter((e) => e !== key) : [...prev, key]);
   };
 
   const selectAll = () => {
+    setEscoposTouched(true);
     if (escopos.length === ESCOPOS_DISPONIVEIS.length) {
       setEscopos([]);
     } else {
@@ -104,6 +132,45 @@ export default function NovoCompartilhamentoScreen() {
         value={profissionalEmail}
         onChangeText={setProfissionalEmail}
       />
+
+      {lookup.isFetching && (
+        <View className="flex-row items-center mb-4 -mt-2">
+          <ActivityIndicator size="small" color="#2563EB" />
+          <Text className="text-xs text-gray-400 ml-2">Buscando profissional...</Text>
+        </View>
+      )}
+
+      {!lookup.isFetching && lookup.data && (
+        <View className="bg-primary-50 rounded-2xl p-3.5 mb-4 -mt-2 flex-row items-start">
+          <Icon name="person-circle-outline" size={18} color="#2563EB" />
+          <View className="flex-1 ml-2">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-sm font-bold text-gray-900 flex-1 mr-2" numberOfLines={1}>{lookup.data.nome}</Text>
+              {lookup.data.statusValidacao && (
+                <View className={`px-2 py-0.5 rounded-full ${validacaoTag[lookup.data.statusValidacao]?.bg}`}>
+                  <Text className={`text-[10px] font-semibold ${validacaoTag[lookup.data.statusValidacao]?.text}`}>{validacaoTag[lookup.data.statusValidacao]?.label}</Text>
+                </View>
+              )}
+            </View>
+            {lookup.data.categoriaConselho && (
+              <Text className="text-xs text-gray-500 mt-0.5">
+                {categoriaConselhoLabels[lookup.data.categoriaConselho] || lookup.data.categoriaConselho}
+                {lookup.data.especialidade ? ` · ${lookup.data.especialidade}` : ''}
+              </Text>
+            )}
+            {lookup.data.categoriaConselho && categoriaEscoposSugeridos[lookup.data.categoriaConselho] && !escoposTouched && (
+              <Text className="text-xs text-primary mt-1">Escopos sugeridos para esta categoria já foram marcados abaixo — ajuste se precisar.</Text>
+            )}
+          </View>
+        </View>
+      )}
+
+      {!lookup.isFetching && lookup.isError && debouncedEmail.length > 0 && (
+        <View className="flex-row items-center mb-4 -mt-2">
+          <Icon name="alert-circle-outline" size={14} color="#94A3B8" />
+          <Text className="text-xs text-gray-400 ml-1.5">Nenhum profissional aprovado encontrado com este e-mail.</Text>
+        </View>
+      )}
 
       <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 mt-1">Expira em</Text>
       <View className="flex-row gap-2 mb-4">
