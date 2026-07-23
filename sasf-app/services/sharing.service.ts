@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { Compartilhamento, EscopoCompartilhamento, LogAcesso, AcessoProfissional, PacienteCompartilhado } from '../types';
+import type { Compartilhamento, EscopoCompartilhamento, LogAcesso, AcessoProfissional, PacienteCompartilhado, AnotacaoProfissional } from '../types';
 
 export const sharingService = {
   async list(): Promise<Compartilhamento[]> {
@@ -35,5 +35,19 @@ export const sharingService = {
   async getPatientData(token: string): Promise<PacienteCompartilhado> {
     const { data } = await api.get(`/professional/access/${token}`);
     return data;
+  },
+
+  async listNotes(token: string): Promise<AnotacaoProfissional[]> {
+    const { data } = await api.get(`/professional/access/${token}/notes`);
+    return data;
+  },
+
+  async createNote(token: string, texto: string): Promise<AnotacaoProfissional> {
+    const { data } = await api.post(`/professional/access/${token}/notes`, { texto });
+    return data;
+  },
+
+  async deleteNote(id: string): Promise<void> {
+    await api.delete(`/professional/notes/${id}`);
   },
 };

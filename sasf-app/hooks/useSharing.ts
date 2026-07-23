@@ -56,3 +56,27 @@ export function usePatientData(token: string) {
     enabled: !!token,
   });
 }
+
+export function useProfessionalNotes(token: string) {
+  return useQuery({
+    queryKey: ['professionalNotes', token],
+    queryFn: () => sharingService.listNotes(token),
+    enabled: !!token,
+  });
+}
+
+export function useCreateProfessionalNote(token: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (texto: string) => sharingService.createNote(token, texto),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['professionalNotes', token] }),
+  });
+}
+
+export function useDeleteProfessionalNote(token: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => sharingService.deleteNote(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['professionalNotes', token] }),
+  });
+}

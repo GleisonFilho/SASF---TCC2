@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
 import { authService } from '../services/auth.service';
 import { router } from 'expo-router';
@@ -8,11 +8,17 @@ export function useLogin() {
   const setUser = useAuthStore((s) => s.setUser);
 
   return useMutation({
-    mutationFn: ({ email, senha }: { email: string; senha: string }) =>
-      authService.login(email, senha),
-    onSuccess: (data) => {
-      setUser(data.user);
-      router.replace('/(app)/(tabs)/home');
+    mutationFn: async ({ email, senha }: { email: string; senha: string }) => {
+      await authService.login(email, senha);
+      return authService.me();
+    },
+    onSuccess: (user) => {
+      setUser(user);
+      if (user.tipoPerfil === 'PROFISSIONAL' && user.profissionalDetalhe?.statusValidacao !== 'APPROVED') {
+        router.replace('/(app)/aguardando-aprovacao');
+      } else {
+        router.replace('/(app)/(tabs)/home');
+      }
     },
   });
 }
@@ -38,6 +44,19 @@ export function useLogout() {
     onSettled: () => {
       logout();
       router.replace('/(auth)/login');
+    },
+  });
+}
+
+export function useMe() {
+  const setUser = useAuthStore((s) => s.setUser);
+
+  return useQuery({
+    queryKey: ['me'],
+    queryFn: async () => {
+      const user = await authService.me();
+      setUser(user);
+      return user;
     },
   });
 }

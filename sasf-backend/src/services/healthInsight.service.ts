@@ -331,6 +331,11 @@ export const healthInsightService = {
 
   async calculateScore(membroId: string, userId: string): Promise<HealthScoreResult> {
     await familyMembersService.getById(membroId, userId);
+    return computeHealthScore(membroId);
+  },
+};
+
+export async function computeHealthScore(membroId: string): Promise<HealthScoreResult> {
     const { profile, weightRecords, exercisesWeek, medications, vitalSignsWide, mealsWeek, waterWeek, psychWeek } = await fetchHealthData(membroId);
 
     const metaAgua = profile?.metaAguaMl || 2000;
@@ -378,5 +383,4 @@ export const healthInsightService = {
       trend,
       explicacao: 'O score combina 7 pilares baseados em evidências (Sinais Vitais, Bem-estar Psicológico, Nutrição, Exercícios, Hidratação, Sono e Adesão ao Tratamento), cada um com peso específico, somando até 100 pontos. O pilar de Adesão ao Tratamento é uma estimativa baseada em engajamento recente com o app — o sistema não registra doses tomadas, então não é uma medição real de adesão.',
     };
-  },
-};
+}

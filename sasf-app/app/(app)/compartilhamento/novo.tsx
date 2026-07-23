@@ -8,17 +8,22 @@ import { useToast } from '../../../components/ui/Toast';
 import { Button } from '../../../components/ui/Button';
 import { useFamilyMembers } from '../../../hooks/useFamilyMembers';
 import { useCreateSharing } from '../../../hooks/useSharing';
+import { escopoLabels } from '../../../utils/labels';
 import type { EscopoCompartilhamento } from '../../../types';
 
 const ESCOPOS_DISPONIVEIS: { key: EscopoCompartilhamento; label: string }[] = [
-  { key: 'VITAIS', label: 'Sinais Vitais' },
-  { key: 'SINTOMAS', label: 'Sintomas' },
-  { key: 'CONDICOES', label: 'Condições de Saúde' },
-  { key: 'ALERGIAS', label: 'Alergias' },
-  { key: 'MEDICAMENTOS', label: 'Medicamentos' },
-  { key: 'CONTATOS', label: 'Contatos de Emergência' },
-  { key: 'PERFIL', label: 'Perfil do Membro' },
-  { key: 'MEMBROS', label: 'Lista de Membros' },
+  { key: 'VITAIS', label: escopoLabels.VITAIS },
+  { key: 'SINTOMAS', label: escopoLabels.SINTOMAS },
+  { key: 'CONDICOES', label: escopoLabels.CONDICOES },
+  { key: 'ALERGIAS', label: escopoLabels.ALERGIAS },
+  { key: 'MEDICAMENTOS', label: escopoLabels.MEDICAMENTOS },
+  { key: 'CONTATOS', label: escopoLabels.CONTATOS },
+  { key: 'NUTRICAO', label: escopoLabels.NUTRICAO },
+  { key: 'EXERCICIOS', label: escopoLabels.EXERCICIOS },
+  { key: 'PSICOLOGIA', label: escopoLabels.PSICOLOGIA },
+  { key: 'HEALTH_SCORE', label: escopoLabels.HEALTH_SCORE },
+  { key: 'PERFIL', label: escopoLabels.PERFIL },
+  { key: 'MEMBROS', label: escopoLabels.MEMBROS },
 ];
 
 export default function NovoCompartilhamentoScreen() {

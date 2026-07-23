@@ -10,6 +10,30 @@ import { medicationRepository } from '../repositories/medication.repository';
 import { emergencyContactRepository } from '../repositories/emergencyContact.repository';
 import { vitalSignRepository } from '../repositories/vitalSign.repository';
 import { symptomRepository } from '../repositories/symptom.repository';
+import { professionalNoteRepository } from '../repositories/professionalNote.repository';
+import { nutritionRepository } from '../repositories/nutrition.repository';
+import { exerciseRepository } from '../repositories/exercise.repository';
+import { psychologyRepository } from '../repositories/psychology.repository';
+import { computeHealthScore } from './healthInsight.service';
+
+async function validateActiveToken(codigoToken: string, profissionalId: string) {
+  const token = await sharingRepository.findByToken(codigoToken);
+
+  if (!token) {
+    throw { status: 404, message: 'Token de acesso não encontrado.' };
+  }
+  if (token.profissionalId !== profissionalId) {
+    throw { status: 403, message: 'Este token não pertence a você.' };
+  }
+  if (token.status === 'REVOGADO') {
+    throw { status: 403, message: 'Este compartilhamento foi revogado.' };
+  }
+  if (token.dataExpiracao < new Date()) {
+    throw { status: 403, message: 'Este compartilhamento expirou.' };
+  }
+
+  return token;
+}
 
 export const sharingService = {
   async list(userId: string) {
@@ -102,20 +126,7 @@ export const sharingService = {
   },
 
   async accessByToken(codigoToken: string, profissionalId: string, ip: string | undefined) {
-    const token = await sharingRepository.findByToken(codigoToken);
-
-    if (!token) {
-      throw { status: 404, message: 'Token de acesso não encontrado.' };
-    }
-    if (token.profissionalId !== profissionalId) {
-      throw { status: 403, message: 'Este token não pertence a você.' };
-    }
-    if (token.status === 'REVOGADO') {
-      throw { status: 403, message: 'Este compartilhamento foi revogado.' };
-    }
-    if (token.dataExpiracao < new Date()) {
-      throw { status: 403, message: 'Este compartilhamento expirou.' };
-    }
+    const token = await validateActiveToken(codigoToken, profissionalId);
 
     await auditRepository.log({
       userId: profissionalId,
@@ -134,6 +145,16 @@ export const sharingService = {
     if (escopos.includes('CONTATOS')) dados.contatos = await emergencyContactRepository.findAllByMemberId(token.membroId);
     if (escopos.includes('VITAIS')) dados.sinaisVitais = (await vitalSignRepository.findAllByMemberId(token.membroId)).slice(0, 30);
     if (escopos.includes('SINTOMAS')) dados.sintomas = (await symptomRepository.findAllByMemberId(token.membroId)).slice(0, 30);
+    if (escopos.includes('NUTRICAO')) {
+      dados.nutricao = {
+        perfil: await nutritionRepository.findProfile(token.membroId),
+        pesoRecente: await nutritionRepository.findWeightRecords(token.membroId, 30),
+        refeicoes: await nutritionRepository.findMeals(token.membroId),
+      };
+    }
+    if (escopos.includes('EXERCICIOS')) dados.exercicios = await exerciseRepository.findByMemberId(token.membroId, 30);
+    if (escopos.includes('PSICOLOGIA')) dados.psicologico = await psychologyRepository.findByMemberId(token.membroId, 30);
+    if (escopos.includes('HEALTH_SCORE')) dados.healthScore = await computeHealthScore(token.membroId);
 
     return {
       membro: token.membro,
@@ -146,5 +167,26 @@ export const sharingService = {
 
   async listProfessionalTokens(profissionalId: string) {
     return sharingRepository.findActiveByProfessionalId(profissionalId);
+  },
+
+  async listNotes(codigoToken: string, profissionalId: string) {
+    const token = await validateActiveToken(codigoToken, profissionalId);
+    return professionalNoteRepository.findAllByMemberAndProfessional(token.membroId, profissionalId);
+  },
+
+  async createNote(codigoToken: string, profissionalId: string, texto: string) {
+    const token = await validateActiveToken(codigoToken, profissionalId);
+    return professionalNoteRepository.create({ membroId: token.membroId, profissionalId, texto });
+  },
+
+  async deleteNote(id: string, profissionalId: string) {
+    const note = await professionalNoteRepository.findById(id);
+    if (!note) {
+      throw { status: 404, message: 'Anotação não encontrada.' };
+    }
+    if (note.profissionalId !== profissionalId) {
+      throw { status: 403, message: 'Acesso negado.' };
+    }
+    return professionalNoteRepository.delete(id);
   },
 };

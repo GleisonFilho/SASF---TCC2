@@ -27,6 +27,17 @@ const appItems: { icon: MenuIcon; iconBg: string; iconColor: string; label: stri
   { icon: 'information-circle-outline', iconBg: 'bg-secondary-light', iconColor: '#059669', label: 'Sobre o SASF', description: 'Missão, versão e tecnologias', route: '/(app)/perfil/sobre' },
 ];
 
+const professionalAppItems: { icon: MenuIcon; iconBg: string; iconColor: string; label: string; description: string; route: string }[] = [
+  { icon: 'settings-outline', iconBg: 'bg-gray-100', iconColor: '#475569', label: 'Configurações', description: 'Tema, notificações e privacidade', route: '/(app)/perfil/configuracoes' },
+  { icon: 'information-circle-outline', iconBg: 'bg-secondary-light', iconColor: '#059669', label: 'Sobre o SASF', description: 'Missão, versão e tecnologias', route: '/(app)/perfil/sobre' },
+];
+
+const validacaoLabel: Record<string, { label: string; bg: string; text: string }> = {
+  APPROVED: { label: 'Aprovado', bg: 'bg-success-light', text: 'text-success' },
+  PENDING: { label: 'Em análise', bg: 'bg-warning-light', text: 'text-warning' },
+  REJECTED: { label: 'Não aprovado', bg: 'bg-danger-light', text: 'text-danger' },
+};
+
 function MenuGroup({ label, items, onPress }: { label: string; items: typeof accountItems; onPress: (route: string) => void }) {
   return (
     <View className="mb-6">
@@ -87,6 +98,90 @@ export default function PerfilScreen() {
     totalCompartilhamentos: sharings?.length || 0,
   });
   const unlockedCount = achievements.filter((a) => a.desbloqueada).length;
+
+  if (user?.tipoPerfil === 'PROFISSIONAL') {
+    const prof = user.profissionalDetalhe;
+    const validacao = validacaoLabel[prof?.statusValidacao || 'PENDING'];
+    return (
+      <ScreenContainer>
+        <Text className="text-2xl font-bold text-gray-900 mb-5 mt-2 tracking-tight">Perfil</Text>
+
+        <View className="bg-gray-900 rounded-4xl p-6 mb-4 shadow-md shadow-gray-900/20">
+          <View className="items-center">
+            <View className="relative mb-4">
+              {user?.fotoUrl ? (
+                <Image source={{ uri: user.fotoUrl }} style={{ width: 88, height: 88, borderRadius: 44, borderWidth: 3, borderColor: 'rgba(255,255,255,0.18)' }} />
+              ) : (
+                <LinearGradient
+                  colors={['#2563EB', '#06B6D4']}
+                  start={{ x: 0.15, y: 0 }}
+                  end={{ x: 0.85, y: 1 }}
+                  style={{ width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: 'rgba(255,255,255,0.18)' }}
+                >
+                  <Text className="text-white font-extrabold text-4xl">{user?.nome?.[0] || '?'}</Text>
+                </LinearGradient>
+              )}
+              <TouchableOpacity
+                onPress={() => goTo('/(app)/perfil/editar')}
+                activeOpacity={0.8}
+                className="absolute bottom-0 right-0 bg-white w-8 h-8 rounded-full items-center justify-center shadow-sm"
+              >
+                <Icon name="pencil" size={14} color="#2563EB" />
+              </TouchableOpacity>
+            </View>
+            <Text className="text-xl font-bold text-white">{user?.nome}</Text>
+            <Text className="text-xs text-white/50 mt-1">{user?.email}</Text>
+            <View className="bg-white/10 px-4 py-1.5 rounded-full mt-3 flex-row items-center">
+              <Icon name="shield-checkmark-outline" size={13} color="#fff" />
+              <Text className="text-white text-xs font-semibold ml-1.5">Profissional de Saúde</Text>
+            </View>
+          </View>
+        </View>
+
+        <View className="mb-6">
+          <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5 px-1">Dados Profissionais</Text>
+          <View className="bg-surface rounded-2xl border border-gray-100 shadow-sm shadow-gray-900/5 p-4">
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className="text-xs text-gray-400">Status do Cadastro</Text>
+              <View className={`px-2.5 py-1 rounded-full ${validacao.bg}`}>
+                <Text className={`text-xs font-semibold ${validacao.text}`}>{validacao.label}</Text>
+              </View>
+            </View>
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className="text-xs text-gray-400">Registro Profissional</Text>
+              <Text className="text-xs font-semibold text-gray-900">{prof?.registroProfissional}</Text>
+            </View>
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className="text-xs text-gray-400">Categoria do Conselho</Text>
+              <Text className="text-xs font-semibold text-gray-900">{prof?.categoriaConselho}</Text>
+            </View>
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className="text-xs text-gray-400">UF</Text>
+              <Text className="text-xs font-semibold text-gray-900">{prof?.ufConselho}</Text>
+            </View>
+            {prof?.especialidade && (
+              <View className="flex-row items-center justify-between">
+                <Text className="text-xs text-gray-400">Especialidade</Text>
+                <Text className="text-xs font-semibold text-gray-900">{prof.especialidade}</Text>
+              </View>
+            )}
+          </View>
+          <Text className="text-xs text-gray-400 mt-2.5 px-1">
+            Registro profissional e UF só podem ser alterados mediante nova validação administrativa.
+          </Text>
+        </View>
+
+        <MenuGroup label="Conta" items={accountItems} onPress={goTo} />
+        <MenuGroup label="Aplicativo" items={professionalAppItems} onPress={goTo} />
+
+        <View className="items-center mb-4">
+          <View className="bg-gray-50 px-3 py-1.5 rounded-full">
+            <Text className="text-xs text-gray-400">SASF v1.0 · IFPI Campus Picos</Text>
+          </View>
+        </View>
+      </ScreenContainer>
+    );
+  }
 
   return (
     <ScreenContainer>

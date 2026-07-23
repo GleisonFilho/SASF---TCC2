@@ -111,7 +111,7 @@ export interface RegistroSintoma {
   createdAt: string;
 }
 
-export type EscopoCompartilhamento = 'PERFIL' | 'MEMBROS' | 'CONDICOES' | 'ALERGIAS' | 'MEDICAMENTOS' | 'CONTATOS' | 'VITAIS' | 'SINTOMAS';
+export type EscopoCompartilhamento = 'PERFIL' | 'MEMBROS' | 'CONDICOES' | 'ALERGIAS' | 'MEDICAMENTOS' | 'CONTATOS' | 'VITAIS' | 'SINTOMAS' | 'NUTRICAO' | 'EXERCICIOS' | 'PSICOLOGIA' | 'HEALTH_SCORE';
 
 export interface Compartilhamento {
   id: string;
@@ -157,7 +157,19 @@ export interface PacienteCompartilhado {
     contatos?: ContatoEmergencia[];
     sinaisVitais?: SinalVital[];
     sintomas?: RegistroSintoma[];
+    nutricao?: { perfil: PerfilNutricional | null; pesoRecente: RegistroPeso[]; refeicoes: RegistroRefeicao[] };
+    exercicios?: RegistroExercicio[];
+    psicologico?: RegistroPsicologico[];
+    healthScore?: HealthScoreResult;
   };
+}
+
+export interface AnotacaoProfissional {
+  id: string;
+  membroId: string;
+  profissionalId: string;
+  texto: string;
+  createdAt: string;
 }
 
 export interface LogAcesso {

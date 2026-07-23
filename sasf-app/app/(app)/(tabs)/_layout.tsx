@@ -29,14 +29,18 @@ export default function TabsLayout() {
         href: isProfessional ? null : undefined,
         tabBarIcon: ({ focused }) => <Icon name={focused ? 'shield-checkmark' : 'shield-checkmark-outline'} size={24} color={focused ? '#2563EB' : '#94A3B8'} />,
       }} />
-      <Tabs.Screen name="pacientes" options={{
-        title: 'Pacientes',
-        href: isProfessional ? undefined : null,
-        tabBarIcon: ({ focused }) => <Icon name={focused ? 'people' : 'people-outline'} size={24} color={focused ? '#2563EB' : '#94A3B8'} />,
-      }} />
       <Tabs.Screen name="perfil" options={{
         title: 'Perfil',
         tabBarIcon: ({ focused }) => <Icon name={focused ? 'person' : 'person-outline'} size={24} color={focused ? '#2563EB' : '#94A3B8'} />,
+      }} />
+      <Tabs.Screen name="configuracoes" options={{
+        title: 'Configurações',
+        headerShown: true,
+        headerTitle: 'Configurações',
+        headerTintColor: '#2563EB',
+        headerShadowVisible: false,
+        href: isProfessional ? undefined : null,
+        tabBarIcon: ({ focused }) => <Icon name={focused ? 'settings' : 'settings-outline'} size={24} color={focused ? '#2563EB' : '#94A3B8'} />,
       }} />
     </Tabs>
   );

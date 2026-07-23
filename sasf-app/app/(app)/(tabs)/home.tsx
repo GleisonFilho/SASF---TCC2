@@ -1,6 +1,8 @@
-import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Image, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { StatCard } from '../../../components/ui/StatCard';
 import { HealthScore } from '../../../components/ui/HealthScore';
@@ -8,9 +10,11 @@ import { AchievementBadge } from '../../../components/ui/AchievementBadge';
 import { MemberScoreRing } from '../../../components/ui/MemberScoreRing';
 import { CardSkeleton } from '../../../components/ui/Skeleton';
 import { Icon, type IoniconsName } from '../../../components/ui/Icon';
-import { IconBadge } from '../../../components/ui/IconBadge';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { ErrorMessage } from '../../../components/ui/ErrorMessage';
+import { Input } from '../../../components/ui/Input';
+import { LoadingScreen } from '../../../components/ui/LoadingScreen';
+import { ProfessionalPatientCard } from '../../../components/professional/ProfessionalPatientCard';
 import { primaryShadow, accentShadow } from '../../../constants/shadows';
 import { useAuthStore } from '../../../store/authStore';
 import { useFamilyMembers } from '../../../hooks/useFamilyMembers';
@@ -46,13 +50,13 @@ export default function HomeScreen() {
   const isProfessional = user?.tipoPerfil === 'PROFISSIONAL';
   const { data: members, isLoading, error, refetch } = useFamilyMembers();
   const { data: sharings } = useSharings();
-  const { data: professionalAccess } = useProfessionalAccess(isProfessional);
+  const { data: professionalAccess, isLoading: isLoadingAccess, error: accessError, refetch: refetchAccess } = useProfessionalAccess(isProfessional);
   const router = useRouter();
+  const [codigo, setCodigo] = useState('');
 
   const firstName = user?.nome.split(' ')[0] || '';
   const isAdmin = user?.tipoPerfil === 'ADMIN';
   const activeShareCount = sharings?.filter((s) => s.status === 'ATIVO').length || 0;
-  const activePatientCount = professionalAccess?.filter((a) => a.status === 'ATIVO').length || 0;
   const firstMemberId = members?.[0]?.id || '';
 
   const water = useWaterRecords(firstMemberId);
@@ -63,71 +67,82 @@ export default function HomeScreen() {
   const medications = useMedications(firstMemberId);
   const healthScore = useHealthScore(firstMemberId);
 
-  if (error) return <ErrorMessage message="Erro ao carregar dados." onRetry={refetch} />;
-
   if (isProfessional) {
-    const recentPatients = (professionalAccess || []).filter((a) => a.status === 'ATIVO').slice(0, 3);
+    if (isLoadingAccess) return <LoadingScreen />;
+    if (accessError) return <ErrorMessage message="Erro ao carregar pacientes." onRetry={refetchAccess} />;
+
+    const prof = user?.profissionalDetalhe;
+    const treatment = prof?.categoriaConselho === 'CRM' ? 'Dr(a). ' : '';
+    const activeCount = professionalAccess?.filter((a) => a.status === 'ATIVO').length || 0;
+
+    const acessarPorCodigo = () => {
+      const trimmed = codigo.trim();
+      if (!trimmed) return;
+      setCodigo('');
+      router.push(`/(app)/paciente/${trimmed}`);
+    };
+
     return (
-      <ScreenContainer>
-        <View className="flex-row items-center justify-between mb-6 mt-2">
-          <View>
-            <Text className="text-sm text-gray-400">{getGreeting()}</Text>
-            <Text className="text-2xl font-bold text-gray-900 tracking-tight">{firstName}</Text>
-            <Text className="text-xs text-gray-400 mt-0.5">{todayLabel()}</Text>
-          </View>
-          <TouchableOpacity onPress={() => router.push('/(app)/(tabs)/perfil')} activeOpacity={0.8}>
-            {user?.fotoUrl ? (
-              <Image source={{ uri: user.fotoUrl }} style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 2.5, borderColor: '#EFF6FF' }} />
-            ) : (
-              <LinearGradient colors={['#2563EB', '#1D4ED8']} start={{ x: 0.15, y: 0 }} end={{ x: 0.85, y: 1 }} style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 2.5, borderColor: '#EFF6FF' }}>
-                <Text className="text-white font-extrabold text-lg">{user?.nome?.[0] || '?'}</Text>
-              </LinearGradient>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity onPress={() => router.push('/(app)/(tabs)/pacientes')} activeOpacity={0.8} style={primaryShadow} className="mb-6">
-          <LinearGradient colors={['#2563EB', '#1D4ED8']} start={{ x: 0.15, y: 0 }} end={{ x: 0.85, y: 1 }} style={{ borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center' }}>
-            <View className="w-10 h-10 rounded-xl bg-white/15 items-center justify-center mr-3">
-              <Icon name="people" size={20} color="#fff" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-white font-bold text-base">Meus Pacientes</Text>
-              <Text className="text-white/70 text-xs">{activePatientCount} acesso(s) ativo(s)</Text>
-            </View>
-            <Icon name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
-          </LinearGradient>
-        </TouchableOpacity>
-
-        <View className="flex-row items-center justify-between mb-3">
-          <Text className="text-base font-bold text-gray-900">Pacientes Recentes</Text>
-          <TouchableOpacity onPress={() => router.push('/(app)/(tabs)/pacientes')} activeOpacity={0.7}>
-            <Text className="text-primary text-xs font-semibold">Ver todos</Text>
-          </TouchableOpacity>
-        </View>
-
-        {!recentPatients.length ? (
-          <EmptyState icon="people-outline" title="Nenhum paciente ainda" description="Quando uma família compartilhar dados de saúde com você, eles aparecerão aqui." />
-        ) : (
-          recentPatients.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              className="bg-surface rounded-2xl p-3 mb-2.5 border border-gray-100 shadow-sm shadow-gray-900/5 flex-row items-center"
-              onPress={() => router.push(`/(app)/paciente/${item.codigoToken}`)}
-              activeOpacity={0.7}
-            >
-              <IconBadge icon="person" color="#2563EB" size={44} />
-              <View className="flex-1 ml-3">
-                <Text className="font-semibold text-gray-900">{item.membro?.nome}</Text>
-                <Text className="text-xs text-gray-400">{item.membro?.parentesco} · Concedido por {item.concedidoPor?.nome}</Text>
+      <SafeAreaView className="flex-1 bg-background">
+        <FlatList
+          data={professionalAccess}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={{ padding: 20, paddingTop: 8 }}
+          ListHeaderComponent={
+            <View className="mb-5">
+              <View className="flex-row items-center justify-between mb-5 mt-2">
+                <View>
+                  <Text className="text-sm text-gray-400">Bem-vindo(a),</Text>
+                  <Text className="text-2xl font-bold text-gray-900 tracking-tight">{treatment}{user?.nome}</Text>
+                  {prof && <Text className="text-xs text-gray-400 mt-0.5">{prof.categoriaConselho}/{prof.ufConselho} · {prof.registroProfissional}</Text>}
+                </View>
+                <TouchableOpacity onPress={() => router.push('/(app)/(tabs)/perfil')} activeOpacity={0.8}>
+                  {user?.fotoUrl ? (
+                    <Image source={{ uri: user.fotoUrl }} style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 2.5, borderColor: '#EFF6FF' }} />
+                  ) : (
+                    <LinearGradient colors={['#2563EB', '#1D4ED8']} start={{ x: 0.15, y: 0 }} end={{ x: 0.85, y: 1 }} style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 2.5, borderColor: '#EFF6FF' }}>
+                      <Text className="text-white font-extrabold text-lg">{user?.nome?.[0] || '?'}</Text>
+                    </LinearGradient>
+                  )}
+                </TouchableOpacity>
               </View>
-              <Icon name="chevron-forward" size={18} color="#CBD5E1" />
-            </TouchableOpacity>
-          ))
-        )}
-      </ScreenContainer>
+
+              <View className="bg-surface rounded-2xl p-4 border border-gray-100 shadow-sm shadow-gray-900/5 mb-5">
+                <Text className="text-xs font-bold text-gray-400 mb-2.5" style={{ letterSpacing: 0.5 }}>ACESSAR POR CÓDIGO</Text>
+                <View className="flex-row items-end gap-2.5">
+                  <View className="flex-1">
+                    <Input label="Código de acesso" icon="key-outline" placeholder="Cole o código do compartilhamento" value={codigo} onChangeText={setCodigo} autoCapitalize="none" />
+                  </View>
+                  <TouchableOpacity className="bg-primary rounded-xl px-4 py-3.5 mb-4" onPress={acessarPorCodigo} activeOpacity={0.8}>
+                    <Icon name="arrow-forward" size={18} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-base font-bold text-gray-900">Pacientes com Compartilhamento Ativo</Text>
+                <Text className="text-primary text-xs font-semibold">{activeCount}</Text>
+              </View>
+            </View>
+          }
+          renderItem={({ item }) => (
+            <ProfessionalPatientCard item={item} onPress={() => router.push(`/(app)/paciente/${item.codigoToken}`)} />
+          )}
+          ListEmptyComponent={
+            <EmptyState
+              icon="people-outline"
+              title="Nenhum paciente ainda"
+              description="É o paciente (ou familiar responsável) quem inicia o compartilhamento de dados com você, definindo o que pode ser visto e por quanto tempo. Assim que isso acontecer, o acesso aparece aqui automaticamente."
+            />
+          }
+          refreshing={false}
+          onRefresh={refetchAccess}
+        />
+      </SafeAreaView>
     );
   }
+
+  if (error) return <ErrorMessage message="Erro ao carregar dados." onRetry={refetch} />;
 
   const totalWater = water.data?.reduce((s, r) => s + r.quantidadeMl, 0) || 0;
   const weightData = weight.data?.slice(0, 7).reverse().map((w) => parseFloat(w.pesoKg)) || [];

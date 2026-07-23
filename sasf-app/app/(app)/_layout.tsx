@@ -13,6 +13,7 @@ export default function AppLayout() {
       }}
     >
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="aguardando-aprovacao" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="membro/[id]" options={{ headerShown: true, headerTitle: 'Membro' }} />
       <Stack.Screen name="membro/novo" options={{ headerShown: true, headerTitle: 'Novo Membro' }} />
       <Stack.Screen name="membro/[id]/wellness" options={{ headerShown: true, headerTitle: 'Saúde+' }} />

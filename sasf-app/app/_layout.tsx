@@ -40,6 +40,7 @@ const queryClient = new QueryClient();
 function AuthGate() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoading = useAuthStore((s) => s.isLoading);
+  const user = useAuthStore((s) => s.user);
   const segments = useSegments();
   const router = useRouter();
   const restoreSession = useRestoreSession();
@@ -54,13 +55,27 @@ function AuthGate() {
 
   useEffect(() => {
     if (isLoading) return;
-    const inAuth = segments[0] === '(auth)';
+    const segmentsList = segments as string[];
+    const inAuth = segmentsList[0] === '(auth)';
+    const onPendingScreen = segmentsList[0] === '(app)' && segmentsList[1] === 'aguardando-aprovacao';
+
     if (!isAuthenticated && !inAuth) {
       router.replace('/(auth)/login');
-    } else if (isAuthenticated && inAuth) {
-      router.replace('/(app)/(tabs)/home');
+      return;
     }
-  }, [isAuthenticated, isLoading, segments]);
+    if (isAuthenticated && inAuth) {
+      router.replace('/(app)/(tabs)/home');
+      return;
+    }
+    if (isAuthenticated) {
+      const isPendingProfessional = user?.tipoPerfil === 'PROFISSIONAL' && user?.profissionalDetalhe?.statusValidacao !== 'APPROVED';
+      if (isPendingProfessional && !onPendingScreen) {
+        router.replace('/(app)/aguardando-aprovacao');
+      } else if (!isPendingProfessional && onPendingScreen) {
+        router.replace('/(app)/(tabs)/home');
+      }
+    }
+  }, [isAuthenticated, isLoading, segments, user]);
 
   if (isLoading) return <LoadingScreen />;
 
