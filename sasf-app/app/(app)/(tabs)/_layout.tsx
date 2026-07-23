@@ -1,7 +1,10 @@
 import { Tabs } from 'expo-router';
 import { Icon } from '../../../components/ui/Icon';
+import { useAuthStore } from '../../../store/authStore';
 
 export default function TabsLayout() {
+  const isProfessional = useAuthStore((s) => s.user?.tipoPerfil === 'PROFISSIONAL');
+
   return (
     <Tabs
       screenOptions={{
@@ -18,11 +21,18 @@ export default function TabsLayout() {
       }} />
       <Tabs.Screen name="familia" options={{
         title: 'Família',
+        href: isProfessional ? null : undefined,
         tabBarIcon: ({ focused }) => <Icon name={focused ? 'people' : 'people-outline'} size={24} color={focused ? '#2563EB' : '#94A3B8'} />,
       }} />
       <Tabs.Screen name="compartilhamento" options={{
         title: 'Compartilhar',
+        href: isProfessional ? null : undefined,
         tabBarIcon: ({ focused }) => <Icon name={focused ? 'shield-checkmark' : 'shield-checkmark-outline'} size={24} color={focused ? '#2563EB' : '#94A3B8'} />,
+      }} />
+      <Tabs.Screen name="pacientes" options={{
+        title: 'Pacientes',
+        href: isProfessional ? undefined : null,
+        tabBarIcon: ({ focused }) => <Icon name={focused ? 'people' : 'people-outline'} size={24} color={focused ? '#2563EB' : '#94A3B8'} />,
       }} />
       <Tabs.Screen name="perfil" options={{
         title: 'Perfil',

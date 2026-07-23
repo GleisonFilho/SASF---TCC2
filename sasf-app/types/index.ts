@@ -129,6 +129,37 @@ export interface Compartilhamento {
   profissional?: { id: string; nome: string; email: string };
 }
 
+export interface AcessoProfissional {
+  id: string;
+  membroId: string;
+  profissionalId: string;
+  concedidoPorUsuarioId: string;
+  codigoToken: string;
+  dataCriacao: string;
+  dataExpiracao: string;
+  dataRevogacao: string | null;
+  status: 'ATIVO' | 'EXPIRADO' | 'REVOGADO';
+  observacoes: string | null;
+  escopos: { id: string; categoriaDado: EscopoCompartilhamento }[];
+  membro: { id: string; nome: string; parentesco: string };
+  concedidoPor: { id: string; nome: string };
+}
+
+export interface PacienteCompartilhado {
+  membro: MembroFamilia;
+  concedidoPor: { id: string; nome: string };
+  escopos: EscopoCompartilhamento[];
+  dataExpiracao: string;
+  dados: {
+    condicoes?: CondicaoSaude[];
+    alergias?: Alergia[];
+    medicamentos?: MedicamentoUso[];
+    contatos?: ContatoEmergencia[];
+    sinaisVitais?: SinalVital[];
+    sintomas?: RegistroSintoma[];
+  };
+}
+
 export interface LogAcesso {
   id: string;
   tokenId: string;

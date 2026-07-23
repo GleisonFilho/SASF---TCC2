@@ -8,11 +8,13 @@ import { AchievementBadge } from '../../../components/ui/AchievementBadge';
 import { MemberScoreRing } from '../../../components/ui/MemberScoreRing';
 import { CardSkeleton } from '../../../components/ui/Skeleton';
 import { Icon, type IoniconsName } from '../../../components/ui/Icon';
+import { IconBadge } from '../../../components/ui/IconBadge';
+import { EmptyState } from '../../../components/ui/EmptyState';
 import { ErrorMessage } from '../../../components/ui/ErrorMessage';
 import { primaryShadow, accentShadow } from '../../../constants/shadows';
 import { useAuthStore } from '../../../store/authStore';
 import { useFamilyMembers } from '../../../hooks/useFamilyMembers';
-import { useSharings } from '../../../hooks/useSharing';
+import { useSharings, useProfessionalAccess } from '../../../hooks/useSharing';
 import { useConditions, useMedications } from '../../../hooks/useHealthRecords';
 import { useWaterRecords, useWeightRecords, useExerciseWeeklyStats, usePsychologyRecords, useHealthScore } from '../../../hooks/useWellness';
 import { computeAchievements, calculateStreak } from '../../../utils/achievements';
@@ -41,13 +43,16 @@ function NumberChip({ icon, color, value, label }: { icon: IoniconsName; color: 
 
 export default function HomeScreen() {
   const user = useAuthStore((s) => s.user);
+  const isProfessional = user?.tipoPerfil === 'PROFISSIONAL';
   const { data: members, isLoading, error, refetch } = useFamilyMembers();
   const { data: sharings } = useSharings();
+  const { data: professionalAccess } = useProfessionalAccess(isProfessional);
   const router = useRouter();
 
   const firstName = user?.nome.split(' ')[0] || '';
   const isAdmin = user?.tipoPerfil === 'ADMIN';
   const activeShareCount = sharings?.filter((s) => s.status === 'ATIVO').length || 0;
+  const activePatientCount = professionalAccess?.filter((a) => a.status === 'ATIVO').length || 0;
   const firstMemberId = members?.[0]?.id || '';
 
   const water = useWaterRecords(firstMemberId);
@@ -59,6 +64,70 @@ export default function HomeScreen() {
   const healthScore = useHealthScore(firstMemberId);
 
   if (error) return <ErrorMessage message="Erro ao carregar dados." onRetry={refetch} />;
+
+  if (isProfessional) {
+    const recentPatients = (professionalAccess || []).filter((a) => a.status === 'ATIVO').slice(0, 3);
+    return (
+      <ScreenContainer>
+        <View className="flex-row items-center justify-between mb-6 mt-2">
+          <View>
+            <Text className="text-sm text-gray-400">{getGreeting()}</Text>
+            <Text className="text-2xl font-bold text-gray-900 tracking-tight">{firstName}</Text>
+            <Text className="text-xs text-gray-400 mt-0.5">{todayLabel()}</Text>
+          </View>
+          <TouchableOpacity onPress={() => router.push('/(app)/(tabs)/perfil')} activeOpacity={0.8}>
+            {user?.fotoUrl ? (
+              <Image source={{ uri: user.fotoUrl }} style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 2.5, borderColor: '#EFF6FF' }} />
+            ) : (
+              <LinearGradient colors={['#2563EB', '#1D4ED8']} start={{ x: 0.15, y: 0 }} end={{ x: 0.85, y: 1 }} style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 2.5, borderColor: '#EFF6FF' }}>
+                <Text className="text-white font-extrabold text-lg">{user?.nome?.[0] || '?'}</Text>
+              </LinearGradient>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity onPress={() => router.push('/(app)/(tabs)/pacientes')} activeOpacity={0.8} style={primaryShadow} className="mb-6">
+          <LinearGradient colors={['#2563EB', '#1D4ED8']} start={{ x: 0.15, y: 0 }} end={{ x: 0.85, y: 1 }} style={{ borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center' }}>
+            <View className="w-10 h-10 rounded-xl bg-white/15 items-center justify-center mr-3">
+              <Icon name="people" size={20} color="#fff" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-white font-bold text-base">Meus Pacientes</Text>
+              <Text className="text-white/70 text-xs">{activePatientCount} acesso(s) ativo(s)</Text>
+            </View>
+            <Icon name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
+          </LinearGradient>
+        </TouchableOpacity>
+
+        <View className="flex-row items-center justify-between mb-3">
+          <Text className="text-base font-bold text-gray-900">Pacientes Recentes</Text>
+          <TouchableOpacity onPress={() => router.push('/(app)/(tabs)/pacientes')} activeOpacity={0.7}>
+            <Text className="text-primary text-xs font-semibold">Ver todos</Text>
+          </TouchableOpacity>
+        </View>
+
+        {!recentPatients.length ? (
+          <EmptyState icon="people-outline" title="Nenhum paciente ainda" description="Quando uma família compartilhar dados de saúde com você, eles aparecerão aqui." />
+        ) : (
+          recentPatients.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              className="bg-surface rounded-2xl p-3 mb-2.5 border border-gray-100 shadow-sm shadow-gray-900/5 flex-row items-center"
+              onPress={() => router.push(`/(app)/paciente/${item.codigoToken}`)}
+              activeOpacity={0.7}
+            >
+              <IconBadge icon="person" color="#2563EB" size={44} />
+              <View className="flex-1 ml-3">
+                <Text className="font-semibold text-gray-900">{item.membro?.nome}</Text>
+                <Text className="text-xs text-gray-400">{item.membro?.parentesco} · Concedido por {item.concedidoPor?.nome}</Text>
+              </View>
+              <Icon name="chevron-forward" size={18} color="#CBD5E1" />
+            </TouchableOpacity>
+          ))
+        )}
+      </ScreenContainer>
+    );
+  }
 
   const totalWater = water.data?.reduce((s, r) => s + r.quantidadeMl, 0) || 0;
   const weightData = weight.data?.slice(0, 7).reverse().map((w) => parseFloat(w.pesoKg)) || [];

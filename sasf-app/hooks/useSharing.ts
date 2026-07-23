@@ -40,3 +40,19 @@ export function useRevokeSharing() {
     },
   });
 }
+
+export function useProfessionalAccess(enabled = true) {
+  return useQuery({
+    queryKey: ['professionalAccess'],
+    queryFn: sharingService.listProfessionalAccess,
+    enabled,
+  });
+}
+
+export function usePatientData(token: string) {
+  return useQuery({
+    queryKey: ['patientData', token],
+    queryFn: () => sharingService.getPatientData(token),
+    enabled: !!token,
+  });
+}

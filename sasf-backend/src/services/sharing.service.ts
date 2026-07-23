@@ -4,6 +4,12 @@ import { userRepository } from '../repositories/user.repository';
 import { familyMembersService } from './familyMembers.service';
 import { generateShareToken } from '../utils/tokenGenerator';
 import { CategoriaDado } from '@prisma/client';
+import { conditionRepository } from '../repositories/condition.repository';
+import { allergyRepository } from '../repositories/allergy.repository';
+import { medicationRepository } from '../repositories/medication.repository';
+import { emergencyContactRepository } from '../repositories/emergencyContact.repository';
+import { vitalSignRepository } from '../repositories/vitalSign.repository';
+import { symptomRepository } from '../repositories/symptom.repository';
 
 export const sharingService = {
   async list(userId: string) {
@@ -119,11 +125,22 @@ export const sharingService = {
       detalhes: `Profissional acessou dados do membro ${token.membroId}.`,
     });
 
+    const escopos = token.escopos.map((e: { categoriaDado: CategoriaDado }) => e.categoriaDado);
+
+    const dados: Record<string, unknown> = {};
+    if (escopos.includes('CONDICOES')) dados.condicoes = await conditionRepository.findAllByMemberId(token.membroId);
+    if (escopos.includes('ALERGIAS')) dados.alergias = await allergyRepository.findAllByMemberId(token.membroId);
+    if (escopos.includes('MEDICAMENTOS')) dados.medicamentos = await medicationRepository.findAllByMemberId(token.membroId);
+    if (escopos.includes('CONTATOS')) dados.contatos = await emergencyContactRepository.findAllByMemberId(token.membroId);
+    if (escopos.includes('VITAIS')) dados.sinaisVitais = (await vitalSignRepository.findAllByMemberId(token.membroId)).slice(0, 30);
+    if (escopos.includes('SINTOMAS')) dados.sintomas = (await symptomRepository.findAllByMemberId(token.membroId)).slice(0, 30);
+
     return {
       membro: token.membro,
       concedidoPor: token.concedidoPor,
-      escopos: token.escopos.map((e: { categoriaDado: CategoriaDado }) => e.categoriaDado),
+      escopos,
       dataExpiracao: token.dataExpiracao,
+      dados,
     };
   },
 

@@ -20,6 +20,7 @@ export default function AppLayout() {
       <Stack.Screen name="membro/[id]/estatisticas" options={{ headerShown: true, headerTitle: 'Estatísticas' }} />
       <Stack.Screen name="compartilhamento/novo" options={{ headerShown: true, headerTitle: 'Novo Compartilhamento' }} />
       <Stack.Screen name="compartilhamento/[id]" options={{ headerShown: true, headerTitle: 'Detalhes' }} />
+      <Stack.Screen name="paciente/[token]" options={{ headerShown: true, headerTitle: 'Paciente' }} />
       <Stack.Screen name="admin/profissionais" options={{ headerShown: true, headerTitle: 'Profissionais' }} />
       <Stack.Screen name="admin/profissional/[id]" options={{ headerShown: true, headerTitle: 'Profissional' }} />
       <Stack.Screen name="perfil/editar" options={{ headerShown: true, headerTitle: 'Editar Perfil' }} />
