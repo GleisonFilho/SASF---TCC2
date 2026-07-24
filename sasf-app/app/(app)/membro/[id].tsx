@@ -261,8 +261,8 @@ export default function MembroDetailScreen() {
               <View className="flex-1 ml-3">
                 <View className="flex-row items-center justify-between">
                   <Text className="font-semibold text-gray-900 flex-1 mr-2" numberOfLines={1}>{item.descricao}</Text>
-                  <View className={`px-2.5 py-1 rounded-full ${tone.bg}`}>
-                    <Text className={`text-xs font-semibold ${tone.text}`}>{item.intensidade}/10</Text>
+                  <View className="px-2.5 py-1 rounded-full" style={{ backgroundColor: tone.bgHex }}>
+                    <Text className="text-xs font-semibold" style={{ color: tone.textHex }}>{item.intensidade}/10</Text>
                   </View>
                 </View>
                 <Text className="text-xs text-gray-400 mt-1">{fmtDate(item.dataHoraOcorrencia)}</Text>
@@ -294,8 +294,8 @@ export default function MembroDetailScreen() {
               <View className="flex-1 ml-3">
                 <View className="flex-row items-center justify-between">
                   <Text className="font-semibold text-gray-900 flex-1 mr-2" numberOfLines={1}>{item.nomeCondicao}</Text>
-                  <View className={`px-2.5 py-1 rounded-full ${tone.bg}`}>
-                    <Text className={`text-xs font-semibold ${tone.text}`}>{item.status}</Text>
+                  <View className="px-2.5 py-1 rounded-full" style={{ backgroundColor: tone.bgHex }}>
+                    <Text className="text-xs font-semibold" style={{ color: tone.textHex }}>{item.status}</Text>
                   </View>
                 </View>
                 {item.dataDiagnostico && <Text className="text-xs text-gray-400 mt-1">Diagnóstico: {item.dataDiagnostico}</Text>}
@@ -327,8 +327,8 @@ export default function MembroDetailScreen() {
               <View className="flex-1 ml-3">
                 <View className="flex-row items-center justify-between">
                   <Text className="font-semibold text-gray-900 flex-1 mr-2" numberOfLines={1}>{item.substancia}</Text>
-                  <View className={`px-2.5 py-1 rounded-full ${tone.bg}`}>
-                    <Text className={`text-xs font-semibold ${tone.text}`}>{item.gravidade}</Text>
+                  <View className="px-2.5 py-1 rounded-full" style={{ backgroundColor: tone.bgHex }}>
+                    <Text className="text-xs font-semibold" style={{ color: tone.textHex }}>{item.gravidade}</Text>
                   </View>
                 </View>
                 {item.reacao && <Text className="text-xs text-gray-400 mt-1">Reação: {item.reacao}</Text>}

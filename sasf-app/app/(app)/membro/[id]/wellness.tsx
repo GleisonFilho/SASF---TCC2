@@ -603,11 +603,11 @@ function moodTone(value: number): string {
 function Badge({ label, value, invert }: { label: string; value: number; invert?: boolean }) {
   const good = invert ? value <= 4 : value >= 7;
   const mid = invert ? value <= 6 : value >= 4;
-  const bg = good ? 'bg-green-100' : mid ? 'bg-yellow-100' : 'bg-red-100';
-  const text = good ? 'text-green-700' : mid ? 'text-yellow-700' : 'text-red-700';
+  const bgHex = good ? '#DCFCE7' : mid ? '#FEF9C3' : '#FEE2E2';
+  const textHex = good ? '#15803D' : mid ? '#A16207' : '#B91C1C';
   return (
-    <View className={`px-2.5 py-1 rounded-full ${bg}`}>
-      <Text className={`text-xs font-semibold ${text}`}>{label}</Text>
+    <View className="px-2.5 py-1 rounded-full" style={{ backgroundColor: bgHex }}>
+      <Text className="text-xs font-semibold" style={{ color: textHex }}>{label}</Text>
     </View>
   );
 }

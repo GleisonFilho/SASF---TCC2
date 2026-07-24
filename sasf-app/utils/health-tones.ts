@@ -1,21 +1,27 @@
 import type { IoniconsName } from '../components/ui/Icon';
 
-export const statusColors: Record<string, { bg: string; text: string; color: string }> = {
-  ATIVA: { bg: 'bg-red-100', text: 'text-red-700', color: '#DC2626' },
-  CONTROLADA: { bg: 'bg-yellow-100', text: 'text-yellow-700', color: '#D97706' },
-  RESOLVIDA: { bg: 'bg-green-100', text: 'text-green-700', color: '#16A34A' },
+export interface Tone { bg: string; text: string; color: string; bgHex: string; textHex: string }
+
+const RED: Tone = { bg: 'bg-red-100', text: 'text-red-700', color: '#DC2626', bgHex: '#FEE2E2', textHex: '#B91C1C' };
+const YELLOW: Tone = { bg: 'bg-yellow-100', text: 'text-yellow-700', color: '#D97706', bgHex: '#FEF9C3', textHex: '#A16207' };
+const GREEN: Tone = { bg: 'bg-green-100', text: 'text-green-700', color: '#16A34A', bgHex: '#DCFCE7', textHex: '#15803D' };
+
+export const statusColors: Record<string, Tone> = {
+  ATIVA: RED,
+  CONTROLADA: YELLOW,
+  RESOLVIDA: GREEN,
 };
 
-export const gravidadeColors: Record<string, { bg: string; text: string; color: string }> = {
-  LEVE: { bg: 'bg-green-100', text: 'text-green-700', color: '#16A34A' },
-  MODERADA: { bg: 'bg-yellow-100', text: 'text-yellow-700', color: '#D97706' },
-  GRAVE: { bg: 'bg-red-100', text: 'text-red-700', color: '#DC2626' },
+export const gravidadeColors: Record<string, Tone> = {
+  LEVE: GREEN,
+  MODERADA: YELLOW,
+  GRAVE: RED,
 };
 
-export function intensityTone(value: number): { bg: string; text: string; color: string } {
-  if (value >= 7) return { bg: 'bg-red-100', text: 'text-red-700', color: '#DC2626' };
-  if (value >= 4) return { bg: 'bg-yellow-100', text: 'text-yellow-700', color: '#D97706' };
-  return { bg: 'bg-green-100', text: 'text-green-700', color: '#16A34A' };
+export function intensityTone(value: number): Tone {
+  if (value >= 7) return RED;
+  if (value >= 4) return YELLOW;
+  return GREEN;
 }
 
 export const tipoMedicaoIcon: Record<string, { icon: IoniconsName; color: string }> = {
