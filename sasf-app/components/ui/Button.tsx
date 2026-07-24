@@ -9,12 +9,12 @@ interface ButtonProps {
   disabled?: boolean;
 }
 
-const variants = {
-  primary: 'bg-primary',
-  secondary: 'bg-secondary',
-  outline: 'bg-transparent border-[1.5px] border-primary',
-  danger: 'bg-danger',
-  'danger-outline': 'bg-transparent border-[1.5px] border-red-300',
+const variantStyles: Record<string, { backgroundColor: string; borderWidth?: number; borderColor?: string }> = {
+  primary: { backgroundColor: '#2563EB' },
+  secondary: { backgroundColor: '#10B981' },
+  outline: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: '#2563EB' },
+  danger: { backgroundColor: '#DC2626' },
+  'danger-outline': { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: '#FCA5A5' },
 };
 
 const variantShadows = {
@@ -25,21 +25,22 @@ const variantShadows = {
   'danger-outline': undefined,
 };
 
-const textVariants = {
-  primary: 'text-white',
-  secondary: 'text-white',
-  outline: 'text-primary',
-  danger: 'text-white',
-  'danger-outline': 'text-danger',
+const textColors: Record<string, string> = {
+  primary: '#FFFFFF',
+  secondary: '#FFFFFF',
+  outline: '#2563EB',
+  danger: '#FFFFFF',
+  'danger-outline': '#DC2626',
 };
 
 export function Button({ title, onPress, loading, variant = 'primary', disabled }: ButtonProps) {
   return (
     <TouchableOpacity
-      className={`rounded-2xl py-4 items-center justify-center ${variants[variant]} ${
-        disabled || loading ? 'opacity-50' : ''
-      }`}
-      style={disabled || loading ? undefined : variantShadows[variant]}
+      className="rounded-2xl py-4 items-center justify-center"
+      style={[
+        variantStyles[variant],
+        disabled || loading ? { opacity: 0.5 } : variantShadows[variant],
+      ]}
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.8}
@@ -47,7 +48,7 @@ export function Button({ title, onPress, loading, variant = 'primary', disabled 
       {loading ? (
         <ActivityIndicator color={variant === 'outline' ? '#2563EB' : variant === 'danger-outline' ? '#DC2626' : '#fff'} />
       ) : (
-        <Text className={`text-base font-semibold ${textVariants[variant]}`}>{title}</Text>
+        <Text className="text-base font-semibold" style={{ color: textColors[variant] }}>{title}</Text>
       )}
     </TouchableOpacity>
   );

@@ -24,9 +24,10 @@ export function ChipSelect({ label, options, value, onChange }: ChipSelectProps)
               key={opt.value}
               onPress={() => onChange(opt.value)}
               activeOpacity={0.8}
-              className={`px-3.5 py-2 rounded-xl border ${selected ? 'bg-primary border-primary' : 'bg-white border-gray-200'}`}
+              className="px-3.5 py-2 rounded-xl border"
+              style={selected ? { backgroundColor: '#2563EB', borderColor: '#2563EB' } : { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
             >
-              <Text className={`text-xs font-semibold ${selected ? 'text-white' : 'text-gray-600'}`}>{opt.label}</Text>
+              <Text className="text-xs font-semibold" style={{ color: selected ? '#FFFFFF' : '#475569' }}>{opt.label}</Text>
             </TouchableOpacity>
           );
         })}

@@ -46,7 +46,8 @@ function MenuGroup({ label, items, onPress }: { label: string; items: typeof acc
         {items.map((item, i) => (
           <TouchableOpacity
             key={item.route}
-            className={`flex-row items-center px-4 py-4 ${i < items.length - 1 ? 'border-b border-gray-50' : ''}`}
+            className="flex-row items-center px-4 py-4"
+            style={i < items.length - 1 ? { borderBottomWidth: 1, borderBottomColor: '#F8FAFC' } : undefined}
             onPress={() => onPress(item.route)}
             activeOpacity={0.7}
           >

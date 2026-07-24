@@ -36,7 +36,7 @@ export function ProfessionalNotes({ token }: { token: string }) {
 
       <View className="bg-surface rounded-2xl p-3.5 border border-gray-100 shadow-sm shadow-gray-900/5 mb-3">
         <Input label="Nova anotação" icon="pencil-outline" placeholder="Ex: Pressão controlada, manter dose atual." value={texto} onChangeText={setTexto} multiline />
-        <TouchableOpacity className={`bg-primary rounded-xl py-2.5 items-center ${createNote.isPending ? 'opacity-50' : ''}`} onPress={submit} activeOpacity={0.8} disabled={createNote.isPending}>
+        <TouchableOpacity className="bg-primary rounded-xl py-2.5 items-center" style={createNote.isPending ? { opacity: 0.5 } : undefined} onPress={submit} activeOpacity={0.8} disabled={createNote.isPending}>
           <Text className="text-white text-sm font-semibold">{createNote.isPending ? 'Salvando...' : 'Salvar Anotação'}</Text>
         </TouchableOpacity>
       </View>
