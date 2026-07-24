@@ -1,6 +1,6 @@
 import { api } from './api';
 import * as SecureStore from 'expo-secure-store';
-import type { AuthResponse, User } from '../types';
+import type { AuthResponse, User, RegisterProfessionalBody, RegisterProfessionalResponse } from '../types';
 
 export const authService = {
   async login(email: string, senha: string): Promise<AuthResponse> {
@@ -14,6 +14,11 @@ export const authService = {
     const { data } = await api.post('/auth/register', body);
     await SecureStore.setItemAsync('accessToken', data.accessToken);
     await SecureStore.setItemAsync('refreshToken', data.refreshToken);
+    return data;
+  },
+
+  async registerProfessional(body: RegisterProfessionalBody): Promise<RegisterProfessionalResponse> {
+    const { data } = await api.post('/auth/register/professional', body);
     return data;
   },
 

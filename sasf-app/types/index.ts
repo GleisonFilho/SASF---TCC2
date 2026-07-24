@@ -37,6 +37,22 @@ export interface AuthResponse {
   refreshToken: string;
 }
 
+export interface RegisterProfessionalBody {
+  nome: string;
+  email: string;
+  senha: string;
+  telefone?: string;
+  registroProfissional: string;
+  categoriaConselho: string;
+  ufConselho: string;
+  especialidade?: string;
+}
+
+export interface RegisterProfessionalResponse {
+  user: User;
+  message: string;
+}
+
 export interface MembroFamilia {
   id: string;
   usuarioResponsavelId: string;

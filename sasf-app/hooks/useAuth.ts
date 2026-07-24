@@ -3,6 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
 import { authService } from '../services/auth.service';
 import { router } from 'expo-router';
+import type { RegisterProfessionalBody } from '../types';
 
 export function useLogin() {
   const setUser = useAuthStore((s) => s.setUser);
@@ -33,6 +34,12 @@ export function useRegister() {
       setUser(data.user);
       router.replace('/(app)/(tabs)/home');
     },
+  });
+}
+
+export function useRegisterProfessional() {
+  return useMutation({
+    mutationFn: (body: RegisterProfessionalBody) => authService.registerProfessional(body),
   });
 }
 
